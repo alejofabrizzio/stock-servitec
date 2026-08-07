@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SERVITEC · Stock</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
   :root{
     --bg:#0d1117;--panel:#151b23;--panel2:#1c2430;--border:#2a3340;
@@ -22,16 +21,19 @@
   .admin-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:7px;font-size:12px;cursor:pointer;}
   .admin-btn:hover{border-color:var(--accent);color:var(--accent);}
 
-  .upload-box{background:var(--panel);border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;margin-bottom:18px;display:none;}
+  .upload-section{display:none;margin-bottom:18px;}
+  .upload-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  .upload-box{background:var(--panel);border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;}
+  .upload-box.loaded{border-color:var(--mucho);border-style:solid;}
+  .upload-box h3{margin:0 0 8px 0;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
   .upload-box input{display:none;}
-  .upload-btn{display:inline-block;background:var(--accent);color:#1a1a1a;font-weight:700;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;}
-  .upload-hint{color:var(--muted);font-size:12px;margin-top:10px;}
-  .loaded-files{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
-  .file-tag{background:var(--panel2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;}
+  .upload-btn{display:inline-block;background:var(--accent);color:#1a1a1a;font-weight:700;padding:8px 16px;border-radius:7px;cursor:pointer;font-size:13px;}
+  .upload-status{font-size:12px;margin-top:8px;min-height:16px;}
+  .upload-status.ok{color:var(--mucho);}
+  .upload-status.saving{color:var(--medio);}
+  .upload-status.error{color:var(--poco);}
 
-  .saving{display:none;text-align:center;color:var(--medio);font-size:13px;margin-bottom:12px;padding:10px;background:var(--panel);border-radius:8px;}
-
-  .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px;display:none;}
+  .stats{display:none;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px;}
   .stat{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
   .stat .n{font-size:22px;font-weight:700;}
   .stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
@@ -61,14 +63,14 @@
   .badge.no{background:rgba(92,95,102,.15);color:var(--no);}
   .badge.no .dot{background:var(--no);}
 
-  .empty{text-align:center;color:var(--muted);padding:60px 20px;font-size:14px;}
   .loading{text-align:center;color:var(--muted);padding:60px 20px;font-size:14px;}
+  .empty{display:none;text-align:center;color:var(--muted);padding:40px;font-size:14px;}
 
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50;}
   .modal-overlay.open{display:flex;}
   .modal{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:24px;width:280px;}
   .modal h3{margin:0 0 12px 0;font-size:14px;}
-  .modal input[type=password]{width:100%;margin-bottom:10px;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:14px;flex:none;}
+  .modal input[type=password]{width:100%;margin-bottom:10px;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:14px;}
   .modal-actions{display:flex;gap:8px;}
   .modal-actions button{flex:1;padding:9px;border-radius:7px;border:1px solid var(--border);background:var(--panel2);color:var(--text);cursor:pointer;font-size:13px;}
   .modal-actions button.primary{background:var(--accent);color:#1a1a1a;border:none;font-weight:600;}
@@ -77,6 +79,7 @@
   @media(max-width:600px){
     .stats{grid-template-columns:repeat(2,1fr);}
     .stat:first-child{grid-column:1/-1;}
+    .upload-grid{grid-template-columns:1fr;}
   }
 </style>
 </head>
@@ -90,16 +93,30 @@
     <button class="admin-btn" id="adminToggle">Admin</button>
   </header>
 
-  <div class="upload-box" id="uploadBox">
-    <label class="upload-btn">
-      📂 Importar archivos de stock
-      <input type="file" id="fileInput" accept=".xls,.xlsx,.csv" multiple>
-    </label>
-    <div class="upload-hint">Seleccioná los .xls de RP Sistemas (Lusqtoff, Omaha, Gamma). Se publica automáticamente para todos los clientes.</div>
-    <div class="loaded-files" id="loadedFiles"></div>
+  <div class="upload-section" id="uploadSection">
+    <div class="upload-grid">
+      <div class="upload-box" id="box-gamma">
+        <h3>Gamma</h3>
+        <label class="upload-btn">Importar <input type="file" accept=".xls,.xlsx,.csv" data-prov="gamma"></label>
+        <div class="upload-status" id="status-gamma"></div>
+      </div>
+      <div class="upload-box" id="box-lusqtoff">
+        <h3>Lusqtoff</h3>
+        <label class="upload-btn">Importar <input type="file" accept=".xls,.xlsx,.csv" data-prov="lusqtoff"></label>
+        <div class="upload-status" id="status-lusqtoff"></div>
+      </div>
+      <div class="upload-box" id="box-omaha">
+        <h3>Omaha</h3>
+        <label class="upload-btn">Importar <input type="file" accept=".xls,.xlsx,.csv" data-prov="omaha"></label>
+        <div class="upload-status" id="status-omaha"></div>
+      </div>
+      <div class="upload-box" id="box-kld">
+        <h3>KLD</h3>
+        <label class="upload-btn">Importar <input type="file" accept=".xls,.xlsx,.csv" data-prov="kld"></label>
+        <div class="upload-status" id="status-kld"></div>
+      </div>
+    </div>
   </div>
-
-  <div class="saving" id="saving">⏳ Publicando datos para los clientes...</div>
 
   <div class="stats" id="stats">
     <div class="stat"><div class="n" id="statTotal">0</div><div class="l">Productos</div></div>
@@ -118,6 +135,13 @@
       <option value="poco">Poco</option>
       <option value="no">Sin stock</option>
     </select>
+    <select id="filterProv">
+      <option value="">Todos los proveedores</option>
+      <option value="gamma">Gamma</option>
+      <option value="lusqtoff">Lusqtoff</option>
+      <option value="omaha">Omaha</option>
+      <option value="kld">KLD</option>
+    </select>
   </div>
 
   <table id="table">
@@ -126,7 +150,7 @@
   </table>
 
   <div class="loading" id="loadingState">Cargando stock...</div>
-  <div class="empty" id="emptyState" style="display:none;">Sin resultados para ese filtro.</div>
+  <div class="empty" id="emptyState">Sin resultados para ese filtro.</div>
 </div>
 
 <div class="modal-overlay" id="pwModal">
@@ -142,18 +166,22 @@
 </div>
 
 <script>
+const JSONBIN_KEY = '$2a$10$VEZjI7i4IvGcTAgbUupJ2e6DLdWRgfy8.kAxyu0tbzMNZkjodjlRG';
+const ADMIN_PASS = 'servitec2026';
+
+const BINS = {
+  gamma:    '6a447181f5f4af5e294ab48f',
+  omaha:    '6a445359da38895dfe18bda9'
+};
+
 const SUPABASE_URL = 'https://qounuojfvvsgfdbpdyhu.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tV7fygkcvybWRoUqZINVYA_MKUmzpDf';
-const ADMIN_PASS   = 'servitec2026';
+const SUPABASE_PROVIDERS = ['lusqtoff','kld'];
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-let productos = [];
+let data = { gamma:[], lusqtoff:[], omaha:[], kld:[] };
 let lastUpdate = null;
 let isAdmin = false;
-let loadedFileNames = [];
 
-// ── Helpers ──────────────────────────────────────────────
 function estadoStock(s){ return s>20?'mucho':s>=10?'medio':s>=1?'poco':'no'; }
 const estadoLabel = {mucho:'Mucho',medio:'Medio',poco:'Poco',no:'Sin stock'};
 function fmtFecha(iso){
@@ -161,64 +189,65 @@ function fmtFecha(iso){
   return new Date(iso).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 }
 
-// ── Supabase ──────────────────────────────────────────────
-async function loadFromSupabase(){
+async function loadBin(prov){
   try{
-    const { data, error } = await sb.from('productos').select('*');
-    if(error) throw error;
-    productos = (data||[]).map(r=>({
-      sku:r.sku, descripcion:r.descripcion||'', precio:Number(r.precio)||0,
-      stock:Number(r.stock)||0, proveedor:r.proveedor||''
-    }));
-    lastUpdate = data && data.length
-      ? new Date(Math.max(...data.map(r=>new Date(r.updated_at).getTime()))).toISOString()
-      : null;
-  }catch(e){
-    console.error('Error cargando de Supabase',e);
-    productos=[];lastUpdate=null;
-  }
-  document.getElementById('loadingState').style.display='none';
-  render();
+    if(SUPABASE_PROVIDERS.includes(prov)){
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/productos?proveedor=eq.${prov}&select=productos,last_update`,{
+        headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`}
+      });
+      if(!r.ok) return;
+      const rows = await r.json();
+      const row = rows[0];
+      data[prov] = (row && row.productos) || [];
+      if(row && row.last_update && (!lastUpdate || row.last_update > lastUpdate)) lastUpdate = row.last_update;
+      return;
+    }
+    const r = await fetch(`https://api.jsonbin.io/v3/b/${BINS[prov]}/latest`,{
+      headers:{'X-Master-Key':JSONBIN_KEY,'X-Bin-Meta':'false'}
+    });
+    if(!r.ok) return;
+    const d = await r.json();
+    data[prov] = d.productos || [];
+    if(d.lastUpdate && (!lastUpdate || d.lastUpdate > lastUpdate)) lastUpdate = d.lastUpdate;
+  }catch(e){ console.error(prov, e); }
 }
 
-// Sincroniza UN proveedor: actualiza/crea los SKU del archivo nuevo,
-// y borra los SKU viejos de ese proveedor que ya no están en el archivo.
-async function syncProveedor(proveedor, filas){
-  const ahora = new Date().toISOString();
-  const chunkSize = 500;
-
-  // 1. Traer los SKU que hoy están guardados para este proveedor
-  const { data: actuales, error: e1 } = await sb
-    .from('productos').select('sku').eq('proveedor', proveedor);
-  if(e1) throw e1;
-  const skusActuales = new Set((actuales||[]).map(r=>r.sku));
-  const skusNuevos   = new Set(filas.map(p=>p.sku));
-
-  // 2. Crear/actualizar todos los productos del archivo nuevo
-  const payload = filas.map(p=>({
-    sku:p.sku, descripcion:p.descripcion, precio:p.precio,
-    stock:p.stock, proveedor, updated_at:ahora
-  }));
-  for(let i=0;i<payload.length;i+=chunkSize){
-    const chunk = payload.slice(i,i+chunkSize);
-    const { error } = await sb.from('productos').upsert(chunk,{onConflict:'sku'});
-    if(error) throw error;
+async function saveBin(prov, productos){
+  const ts = new Date().toISOString();
+  if(SUPABASE_PROVIDERS.includes(prov)){
+    const check = await fetch(`${SUPABASE_URL}/rest/v1/productos?proveedor=eq.${prov}&select=id`,{
+      headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`}
+    });
+    const existing = await check.json();
+    if(existing && existing.length){
+      await fetch(`${SUPABASE_URL}/rest/v1/productos?id=eq.${existing[0].id}`,{
+        method:'PATCH',
+        headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`,'Prefer':'return=minimal'},
+        body:JSON.stringify({productos, last_update: ts})
+      });
+    }else{
+      await fetch(`${SUPABASE_URL}/rest/v1/productos`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`,'Prefer':'return=minimal'},
+        body:JSON.stringify({proveedor: prov, productos, last_update: ts})
+      });
+    }
+    lastUpdate = ts;
+    return;
   }
-
-  // 3. Borrar los SKU de este proveedor que quedaron afuera del archivo nuevo
-  const stale = [...skusActuales].filter(s=>!skusNuevos.has(s));
-  for(let i=0;i<stale.length;i+=chunkSize){
-    const chunk = stale.slice(i,i+chunkSize);
-    const { error } = await sb.from('productos').delete().in('sku', chunk);
-    if(error) throw error;
-  }
-
-  return ahora;
+  await fetch(`https://api.jsonbin.io/v3/b/${BINS[prov]}`,{
+    method:'PUT',
+    headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY},
+    body:JSON.stringify({productos, lastUpdate: ts})
+  });
+  lastUpdate = ts;
 }
 
-// ── Parser ────────────────────────────────────────────────
-function parseSheet(rows, proveedor){
-  let hi=-1,cols={};
+// Detecta fila de encabezado buscando "código". Si no la encuentra
+// (como en los archivos de Lusqtoff, que no traen encabezado),
+// cae a lectura por posición fija de columna.
+function parseSheet(rows, prov){
+  let hi=-1, cols={};
   for(let i=0;i<rows.length;i++){
     const row=rows[i]||[];
     const idx=row.findIndex(c=>typeof c==='string'&&c.trim().toLowerCase().startsWith('código'));
@@ -235,63 +264,145 @@ function parseSheet(rows, proveedor){
       break;
     }
   }
-  if(hi===-1)return[];
+
   const out=[];
-  for(let i=hi+1;i<rows.length;i++){
-    const row=rows[i]||[];
-    const codigo=row[cols.codigo];
-    if(!codigo||typeof codigo!=='string'||!codigo.trim())continue;
-    if(codigo.toLowerCase().includes('moneda costo'))continue;
-    const sv=row[cols.stock],pv=row[cols.precio];
-    const stock=typeof sv==='number'?sv:parseFloat(sv)||0;
-    const precio=typeof pv==='number'?pv:parseFloat(pv)||0;
-    out.push({sku:codigo.trim(),descripcion:(row[cols.descripcion]||'').toString().trim(),precio,stock,proveedor});
+
+  if(hi!==-1){
+    // Formato CON fila de encabezado
+    for(let i=hi+1;i<rows.length;i++){
+      const row=rows[i]||[];
+      const codigo=row[cols.codigo];
+      if(!codigo||typeof codigo!=='string'||!codigo.trim())continue;
+      if(codigo.toLowerCase().includes('moneda costo'))continue;
+      const sv=row[cols.stock],pv=row[cols.precio];
+      out.push({
+        sku:codigo.trim(),
+        descripcion:(row[cols.descripcion]||'').toString().trim(),
+        precio:typeof pv==='number'?pv:parseFloat(pv)||0,
+        stock:typeof sv==='number'?sv:parseFloat(sv)||0,
+        proveedor:prov
+      });
+    }
+  } else {
+    // Formato SIN encabezado (ej: export de RP Sistemas para Lusqtoff)
+    // Columnas fijas: A=código(0)  C=descripción(2)  F=precio(5)  G=stock(6)
+    for(let i=0;i<rows.length;i++){
+      const row=rows[i]||[];
+      const codigo=row[0];
+      if(!codigo||typeof codigo!=='string'||!codigo.trim())continue;
+      if(codigo.toLowerCase().includes('moneda costo'))continue;
+      const sv=row[6],pv=row[5];
+      out.push({
+        sku:codigo.trim(),
+        descripcion:(row[2]||'').toString().trim(),
+        precio:typeof pv==='number'?pv:parseFloat(pv)||0,
+        stock:typeof sv==='number'?sv:parseFloat(sv)||0,
+        proveedor:prov
+      });
+    }
   }
   return out;
 }
 
-// ── File Import ───────────────────────────────────────────
-document.getElementById('fileInput').addEventListener('change',function(e){
-  const files=Array.from(e.target.files);
-  if(!files.length)return;
-  let pending=files.length;
-  const porProveedor={}; // proveedor -> filas[]
-  files.forEach(file=>{
-    const reader=new FileReader();
-    reader.onload=function(evt){
+document.querySelectorAll('.upload-section input[type=file]').forEach(input=>{
+  input.addEventListener('change', async function(){
+    const prov = this.dataset.prov;
+    const file = this.files[0];
+    if(!file) return;
+    const statusEl = document.getElementById('status-'+prov);
+    const boxEl = document.getElementById('box-'+prov);
+    statusEl.className='upload-status saving';
+    statusEl.textContent='Leyendo archivo...';
+    const reader = new FileReader();
+    reader.onload = async function(evt){
       try{
-        const wb=XLSX.read(new Uint8Array(evt.target.result),{type:'array'});
-        const sheet=wb.Sheets[wb.SheetNames[0]];
-        const rows=XLSX.utils.sheet_to_json(sheet,{header:1,raw:true,defval:null});
-        const prov=file.name.replace(/\.[^/.]+$/,'');
-        porProveedor[prov]=(porProveedor[prov]||[]).concat(parseSheet(rows,prov));
-        if(!loadedFileNames.includes(prov))loadedFileNames.push(prov);
-      }catch(err){console.error(file.name,err);}
-      if(--pending===0){
-        (async()=>{
-          document.getElementById('saving').style.display='block';
-          try{
-            for(const prov of Object.keys(porProveedor)){
-              await syncProveedor(prov, porProveedor[prov]);
-            }
-            await loadFromSupabase(); // recarga todo ya sincronizado
-          }catch(err){
-            console.error('Error sincronizando',err);
-            alert('Error al publicar los datos. Revisá tu conexión.');
-          }
-          document.getElementById('saving').style.display='none';
-        })();
+        const wb = XLSX.read(new Uint8Array(evt.target.result),{type:'array'});
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet,{header:1,raw:true,defval:null});
+        const productos = parseSheet(rows, prov);
+        statusEl.textContent=`Guardando ${productos.length} productos...`;
+        await saveBin(prov, productos);
+        data[prov] = productos;
+        statusEl.className='upload-status ok';
+        statusEl.textContent=`✓ ${productos.length} productos guardados`;
+        boxEl.classList.add('loaded');
+        render();
+      }catch(e){
+        statusEl.className='upload-status error';
+        statusEl.textContent='Error al procesar el archivo';
+        console.error(e);
       }
     };
     reader.readAsArrayBuffer(file);
   });
 });
 
-// ── Admin modal ───────────────────────────────────────────
+function getAllProductos(){
+  return [...data.gamma, ...data.lusqtoff, ...data.omaha, ...data.kld];
+}
+
+function render(){
+  const todos = getAllProductos();
+  const search = document.getElementById('search').value.toLowerCase();
+  const filtroEst = document.getElementById('filterEstado').value;
+  const filtroProv = document.getElementById('filterProv').value;
+
+  if(!todos.length){
+    document.getElementById('stats').style.display='none';
+    document.getElementById('controls').style.display='none';
+    document.getElementById('table').style.display='none';
+    document.getElementById('emptyState').style.display='none';
+    document.getElementById('loadingState').style.display='block';
+    document.getElementById('loadingState').textContent='Todavía no hay stock cargado.';
+    document.getElementById('subtitle').textContent='Sin datos';
+    return;
+  }
+
+  document.getElementById('subtitle').textContent=`${todos.length} productos · actualizado ${fmtFecha(lastUpdate)}`;
+
+  const counts={mucho:0,medio:0,poco:0,no:0};
+  todos.forEach(p=>counts[estadoStock(p.stock)]++);
+  document.getElementById('statTotal').textContent=todos.length;
+  document.getElementById('statMucho').textContent=counts.mucho;
+  document.getElementById('statMedio').textContent=counts.medio;
+  document.getElementById('statPoco').textContent=counts.poco;
+  document.getElementById('statNo').textContent=counts.no;
+  document.getElementById('stats').style.display='grid';
+  document.getElementById('controls').style.display='flex';
+  document.getElementById('loadingState').style.display='none';
+
+  const filtered=todos.filter(p=>{
+    return(!search||p.sku.toLowerCase().includes(search)||p.descripcion.toLowerCase().includes(search))
+      &&(!filtroEst||estadoStock(p.stock)===filtroEst)
+      &&(!filtroProv||p.proveedor===filtroProv);
+  });
+
+  if(!filtered.length){
+    document.getElementById('table').style.display='none';
+    document.getElementById('emptyState').style.display='block';
+    return;
+  }
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('table').style.display='table';
+  document.getElementById('tbody').innerHTML=filtered.map(p=>{
+    const est=estadoStock(p.stock);
+    return `<tr>
+      <td class="sku">${p.sku}</td>
+      <td>${p.descripcion}</td>
+      <td class="precio">$${p.precio.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td><span class="badge ${est}"><span class="dot"></span>${estadoLabel[est]}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+document.getElementById('search').addEventListener('input',render);
+document.getElementById('filterEstado').addEventListener('change',render);
+document.getElementById('filterProv').addEventListener('change',render);
+
 document.getElementById('adminToggle').addEventListener('click',()=>{
   if(isAdmin){
     isAdmin=false;
-    document.getElementById('uploadBox').style.display='none';
+    document.getElementById('uploadSection').style.display='none';
     document.getElementById('adminToggle').textContent='Admin';
     return;
   }
@@ -307,76 +418,18 @@ function checkPw(){
   if(document.getElementById('pwInput').value===ADMIN_PASS){
     isAdmin=true;
     document.getElementById('pwModal').classList.remove('open');
-    document.getElementById('uploadBox').style.display='block';
+    document.getElementById('uploadSection').style.display='block';
     document.getElementById('adminToggle').textContent='Salir';
   }else{
     document.getElementById('pwError').style.display='block';
   }
 }
 
-// ── Render ────────────────────────────────────────────────
-function render(){
-  const search=document.getElementById('search').value.toLowerCase();
-  const filtro=document.getElementById('filterEstado').value;
-
-  document.getElementById('loadedFiles').innerHTML=
-    loadedFileNames.map(n=>`<span class="file-tag">✓ ${n}</span>`).join('');
-
-  if(!productos.length){
-    document.getElementById('stats').style.display='none';
-    document.getElementById('controls').style.display='none';
-    document.getElementById('table').style.display='none';
-    document.getElementById('emptyState').style.display='none';
-    document.getElementById('loadingState').style.display='block';
-    document.getElementById('loadingState').textContent='Todavía no hay stock cargado.';
-    document.getElementById('subtitle').textContent='Sin datos';
-    return;
-  }
-
-  const fecha=fmtFecha(lastUpdate);
-  document.getElementById('subtitle').textContent=`${productos.length} productos · actualizado ${fecha}`;
-
-  const counts={mucho:0,medio:0,poco:0,no:0};
-  productos.forEach(p=>counts[estadoStock(p.stock)]++);
-  document.getElementById('statTotal').textContent=productos.length;
-  document.getElementById('statMucho').textContent=counts.mucho;
-  document.getElementById('statMedio').textContent=counts.medio;
-  document.getElementById('statPoco').textContent=counts.poco;
-  document.getElementById('statNo').textContent=counts.no;
-  document.getElementById('stats').style.display='grid';
-  document.getElementById('controls').style.display='flex';
-
-  const filtered=productos.filter(p=>{
-    return(!search||p.sku.toLowerCase().includes(search)||p.descripcion.toLowerCase().includes(search))
-      &&(!filtro||estadoStock(p.stock)===filtro);
-  });
-
-  if(!filtered.length){
-    document.getElementById('table').style.display='none';
-    document.getElementById('loadingState').style.display='none';
-    document.getElementById('emptyState').style.display='block';
-    return;
-  }
-  document.getElementById('emptyState').style.display='none';
+// Cargar los 4 proveedores al arrancar
+Promise.all([loadBin('gamma'),loadBin('lusqtoff'),loadBin('omaha'),loadBin('kld')]).then(()=>{
   document.getElementById('loadingState').style.display='none';
-  document.getElementById('table').style.display='table';
-
-  document.getElementById('tbody').innerHTML=filtered.map(p=>{
-    const est=estadoStock(p.stock);
-    return `<tr>
-      <td class="sku">${p.sku}</td>
-      <td>${p.descripcion}</td>
-      <td class="precio">$${p.precio.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
-      <td><span class="badge ${est}"><span class="dot"></span>${estadoLabel[est]}</span></td>
-    </tr>`;
-  }).join('');
-}
-
-document.getElementById('search').addEventListener('input',render);
-document.getElementById('filterEstado').addEventListener('change',render);
-
-// Arrancar
-loadFromSupabase();
+  render();
+});
 </script>
 </body>
 </html>
