@@ -25,6 +25,10 @@
   .admin-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:7px;font-size:12px;cursor:pointer;flex:0 0 auto;}
   .admin-btn:hover{border-color:var(--accent);color:var(--accent);}
 
+  /* Banner de presentacion del deposito */
+  .hero{margin-bottom:20px;border-radius:12px;overflow:hidden;background:#111;}
+  .hero img{display:block;width:100%;height:320px;object-fit:cover;object-position:center 15%;}
+
   .upload-section{display:none;margin-bottom:18px;}
   .upload-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
   .upload-box{background:var(--panel);border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;}
@@ -96,6 +100,9 @@
     h1{font-size:16px;}
     .sub{font-size:11px;}
 
+    .hero{margin-bottom:16px;}
+    .hero img{height:auto;}
+
     .upload-grid{grid-template-columns:1fr;}
 
     .stats{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
@@ -145,6 +152,10 @@
     </div>
     <button class="admin-btn" id="adminToggle">Admin</button>
   </header>
+
+  <div class="hero">
+    <img src="deposito.jpg" alt="Depósito Servitec" onerror="this.parentNode.style.display='none'">
+  </div>
 
   <div class="upload-section" id="uploadSection">
     <div class="upload-grid">
