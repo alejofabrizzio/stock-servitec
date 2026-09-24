@@ -26,14 +26,15 @@
   .admin-btn:hover{border-color:var(--accent);color:var(--accent);}
 
   /* Carrusel de carteles en la portada */
-  .hero{position:relative;margin-bottom:20px;border-radius:12px;overflow:hidden;background:#111;height:300px;}
-  .hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  .hero{position:relative;margin-bottom:20px;border-radius:12px;overflow:hidden;
+        background:#fff;border:1px solid var(--border);border-top:4px solid var(--accent);height:380px;}
+  .hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
             opacity:0;transition:opacity .9s ease;}
   .hero img.on{opacity:1;}
   .hero .puntos{position:absolute;left:0;right:0;bottom:10px;display:flex;justify-content:center;gap:7px;z-index:2;}
-  .hero .puntos b{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.5);cursor:pointer;
+  .hero .puntos b{width:8px;height:8px;border-radius:50%;background:rgba(0,0,0,.25);cursor:pointer;
                   transition:background .2s,transform .2s;box-shadow:0 0 3px rgba(0,0,0,.5);}
-  .hero .puntos b.on{background:#fff;transform:scale(1.25);}
+  .hero .puntos b.on{background:var(--accent);transform:scale(1.25);}
 
   .upload-section{display:none;margin-bottom:18px;}
   .foto-info{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--accent);
@@ -143,7 +144,7 @@
     .cat .cc{font-size:11px;margin-top:4px;}
     .secbar h2{font-size:15px;}
 
-    .hero{margin-bottom:16px;height:230px;}
+    .hero{margin-bottom:16px;height:400px;}
 
     .upload-grid{grid-template-columns:1fr;}
 
@@ -316,15 +317,16 @@ let seccion = null;
 // La categoria se deduce de la descripcion, porque los Excel no la traen.
 // Gana la primera regla que coincide, asi que el orden importa.
 const CATEGORIAS = [
+  ['Taller y máquinas de banco', /#[^#]*\bshk-?\d|gabinete|kit de herramientas (neumatica|\d+ ?p)|juego de herramientas neumatica|set de herramientas \d+ ?p/],
   ['Termofusoras', /termofusora|termofusion/],
   ['Cortadoras sensitivas', /sensitiva|tronzadora/],
   ['Pistolas de calor', /pistola de calor|pistola calor|decapador/],
-  ['Porta herramientas', /caja (de |para )?herramienta|cajon (de |para )?herramienta|bolso (de |para )?herramienta|mochila (de |para )?herramienta|gabinete|carro (de |para )?herramienta|banco porta|porta ?herramienta|maletin|cajon organizador|organizador de herramienta/],
+  ['Porta herramientas', /^(\(oferta\)\s*)?(caja|cajon|bolso|mochila|valija|carro|banco|estante|organizador|porta)[a-z ]{0,14}(de |para |porta)?herramienta|^(\(oferta\)\s*)?(caja|cajon|bolso) (de |para )?herramienta/],
   ['Mecánica', /cargador ?[-\/ ]? ?arrancador|arrancador|cargador (de )?bat|cargador mantenedor|cargador\/arrancador|booster/],
   ['Outdoor y camping', /botella|vaso termico|taza termica|termo\b|matera|\bmate\b|pava|conservadora|carpa|bolsa de dormir|camping|cantimplora|silla plegable|reposera|mochila/],
+  ['Construcción', /rotomartillo|demoledor|martillo (demoledor|electroneumatico|perforador|rotativo)|cortadora de ceramica|cortaceramica|cortadora de porcelanato|ventosa|vibronivelador|vibrador de hormigon|vibradora|motovibrador|hormigonera|mezcladora de hormigon|placa compactadora|compactador|alisador|revocadora|acanaladora|llana/],
   ['Accesorios y consumibles', /tanza|cincel|clip de nivelacion|cunas? de nivelacion|separadores? de baldosa|bateria .*(litio|li-?ion|ah\b)|bateria \d|jgo \d bateria|juego \d bateria|cargador p\/ ?bateria|cargador de bateria para herramienta/],
   ['Jardín y exterior', /cortadora de (cesped|pasto)|cortacesped|corta ?cesped|sopladora|soplador|desmalezadora|motosierra|bordeadora|cortacerco|corta cerco|fumigad|pulverizadora|motoguadana|podador|podar|pala\b|azada|rastrillo|carretilla|riego|motocultivador|motoazada|astilladora|chipeadora|espada|guadana|jardin/],
-  ['Construcción', /rotomartillo|demoledor|martillo (demoledor|electroneumatico|perforador|rotativo)|cortadora de ceramica|cortaceramica|cortadora de porcelanato|ventosa|vibronivelador|vibrador de hormigon|vibradora|motovibrador|hormigonera|mezcladora de hormigon|placa compactadora|compactador|alisador|revocadora|acanaladora|llana/],
   ['Taladros y atornilladores', /taladro|percutor|atornillador|destornillador electrico|llave de impacto|mezclador|revolvedora|agujereadora/],
   ['Amoladoras y cortadoras', /amoladora|cortahierro|cortadora|multi.?cortadora|multi.?herramienta|amoladoras/],
   ['Sierras y carpintería', /sierra|caladora|inglet|cepillad|cepillo (electrico|rebajador)|garlopa|router|fresadora|combinada \d|biseladora|torno para madera|lijadora de banda/],
@@ -415,11 +417,12 @@ async function cargarFotos(){
 function fotoDe(p){ return fotos[claveFoto(p.sku)] || ''; }
 
 function normalizar(t){
-  return t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  // los Excel traen espacios duros; se unifican para que las reglas coincidan
+  return (t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
 }
 function categoriaDe(p){
   if(p._cat) return p._cat;
-  const t = normalizar(p.descripcion||'');
+  const t = normalizar(p.descripcion||'') + ' # ' + normalizar(p.sku||'');
   for(const [nombre,rx] of CATEGORIAS){
     if(rx.test(t)){ p._cat = nombre; return nombre; }
   }
