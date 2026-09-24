@@ -4,17 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SERVITEC · Stock</title>
+<link rel="icon" href="logo.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
-    --bg:#0d1117;--panel:#151b23;--panel2:#1c2430;--border:#2a3340;
-    --text:#e6edf3;--muted:#8b96a5;--accent:#ff7a1a;
-    --mucho:#2ea043;--medio:#d4a72c;--poco:#e8590c;--no:#5c5f66;
+    --bg:#ffffff;--panel:#f7f8fa;--panel2:#ffffff;--border:#e4e7ec;
+    --text:#15181d;--muted:#6b7280;--accent:#e30713;--accent-dark:#b3050f;
+    --mucho:#12833c;--medio:#b07d00;--poco:#e06c00;--no:#98a2b3;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;padding:20px;}
   .wrap{max-width:1100px;margin:0 auto;}
-  header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;}
+  header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:3px solid var(--accent);}
+  .brand{display:flex;align-items:center;gap:14px;}
+  .brand img{width:46px;height:46px;border-radius:10px;display:block;}
   h1{font-size:20px;letter-spacing:.5px;margin:0;text-transform:uppercase;}
   h1 span{color:var(--accent);}
   .sub{color:var(--muted);font-size:13px;margin-top:2px;}
@@ -27,16 +30,18 @@
   .upload-box.loaded{border-color:var(--mucho);border-style:solid;}
   .upload-box h3{margin:0 0 8px 0;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
   .upload-box input{display:none;}
-  .upload-btn{display:inline-block;background:var(--accent);color:#1a1a1a;font-weight:700;padding:8px 16px;border-radius:7px;cursor:pointer;font-size:13px;}
+  .upload-btn{display:inline-block;background:var(--accent);color:#fff;font-weight:700;padding:8px 16px;border-radius:7px;cursor:pointer;font-size:13px;}
+  .upload-btn:hover{background:var(--accent-dark);}
   .upload-status{font-size:12px;margin-top:8px;min-height:16px;}
   .upload-status.ok{color:var(--mucho);}
   .upload-status.saving{color:var(--medio);}
-  .upload-status.error{color:var(--poco);}
+  .upload-status.error{color:var(--accent);}
 
   .stats{display:none;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px;}
   .stat{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
   .stat .n{font-size:22px;font-weight:700;}
   .stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+  .stat:first-child .n{color:var(--accent);}
   .stat.mucho .n{color:var(--mucho);}
   .stat.medio .n{color:var(--medio);}
   .stat.poco .n{color:var(--poco);}
@@ -44,37 +49,40 @@
 
   .controls{display:none;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
   input[type=text]{flex:1;min-width:200px;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:14px;}
+  input[type=text]:focus,select:focus{outline:none;border-color:var(--accent);}
   select{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:14px;}
 
   table{width:100%;border-collapse:collapse;display:none;}
-  thead th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--border);}
+  thead th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:10px 12px;border-bottom:2px solid var(--border);}
   tbody td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;}
-  tbody tr:hover{background:var(--panel2);}
+  tbody tr:hover{background:var(--panel);}
   .sku{color:var(--muted);font-family:monospace;font-size:12px;}
   .precio{font-weight:600;}
+  .marca{display:inline-block;padding:3px 9px;border-radius:6px;background:var(--panel);border:1px solid var(--border);font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
   .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;}
   .dot{width:8px;height:8px;border-radius:50%;}
-  .badge.mucho{background:rgba(46,160,67,.15);color:var(--mucho);}
+  .badge.mucho{background:rgba(18,131,60,.12);color:var(--mucho);}
   .badge.mucho .dot{background:var(--mucho);}
-  .badge.medio{background:rgba(212,167,44,.15);color:var(--medio);}
+  .badge.medio{background:rgba(176,125,0,.12);color:var(--medio);}
   .badge.medio .dot{background:var(--medio);}
-  .badge.poco{background:rgba(232,89,12,.15);color:var(--poco);}
+  .badge.poco{background:rgba(224,108,0,.12);color:var(--poco);}
   .badge.poco .dot{background:var(--poco);}
-  .badge.no{background:rgba(92,95,102,.15);color:var(--no);}
+  .badge.no{background:rgba(152,162,179,.15);color:#6b7280;}
   .badge.no .dot{background:var(--no);}
 
   .loading{text-align:center;color:var(--muted);padding:60px 20px;font-size:14px;}
   .empty{display:none;text-align:center;color:var(--muted);padding:40px;font-size:14px;}
 
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:50;}
   .modal-overlay.open{display:flex;}
-  .modal{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:24px;width:280px;}
+  .modal{background:var(--panel2);border:1px solid var(--border);border-top:4px solid var(--accent);border-radius:12px;padding:24px;width:280px;box-shadow:0 12px 40px rgba(0,0,0,.18);}
   .modal h3{margin:0 0 12px 0;font-size:14px;}
   .modal input[type=password]{width:100%;margin-bottom:10px;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:14px;}
   .modal-actions{display:flex;gap:8px;}
-  .modal-actions button{flex:1;padding:9px;border-radius:7px;border:1px solid var(--border);background:var(--panel2);color:var(--text);cursor:pointer;font-size:13px;}
-  .modal-actions button.primary{background:var(--accent);color:#1a1a1a;border:none;font-weight:600;}
-  .modal-error{color:var(--poco);font-size:12px;margin-bottom:8px;display:none;}
+  .modal-actions button{flex:1;padding:9px;border-radius:7px;border:1px solid var(--border);background:var(--panel);color:var(--text);cursor:pointer;font-size:13px;}
+  .modal-actions button.primary{background:var(--accent);color:#fff;border:none;font-weight:600;}
+  .modal-actions button.primary:hover{background:var(--accent-dark);}
+  .modal-error{color:var(--accent);font-size:12px;margin-bottom:8px;display:none;}
 
   @media(max-width:600px){
     .stats{grid-template-columns:repeat(2,1fr);}
@@ -86,9 +94,12 @@
 <body>
 <div class="wrap">
   <header>
-    <div>
-      <h1>SERVITEC<span> · STOCK</span></h1>
-      <div class="sub" id="subtitle">Cargando...</div>
+    <div class="brand">
+      <img src="logo.png" alt="Servitec" onerror="this.style.display='none'">
+      <div>
+        <h1>SERVITEC<span> · STOCK</span></h1>
+        <div class="sub" id="subtitle">Cargando...</div>
+      </div>
     </div>
     <button class="admin-btn" id="adminToggle">Admin</button>
   </header>
@@ -136,7 +147,7 @@
       <option value="no">Sin stock</option>
     </select>
     <select id="filterProv">
-      <option value="">Todos los proveedores</option>
+      <option value="">Todas las marcas</option>
       <option value="gamma">Gamma</option>
       <option value="lusqtoff">Lusqtoff</option>
       <option value="omaha">Omaha</option>
@@ -145,7 +156,7 @@
   </div>
 
   <table id="table">
-    <thead><tr><th>SKU</th><th>Descripción</th><th>Precio Lista</th><th>Estado</th></tr></thead>
+    <thead><tr><th>SKU</th><th>Descripción</th><th>Marca</th><th>Precio Lista</th><th>Estado</th></tr></thead>
     <tbody id="tbody"></tbody>
   </table>
 
@@ -177,6 +188,8 @@ let isAdmin = false;
 
 function estadoStock(s){ return s>20?'mucho':s>=10?'medio':s>=1?'poco':'no'; }
 const estadoLabel = {mucho:'Mucho',medio:'Medio',poco:'Poco',no:'Sin stock'};
+// La base guarda la columna como "proveedor"; de cara al usuario se llama marca.
+const marcaLabel = {gamma:'Gamma',lusqtoff:'Lusqtoff',omaha:'Omaha',kld:'KLD'};
 function fmtFecha(iso){
   if(!iso) return '';
   return new Date(iso).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
@@ -351,6 +364,9 @@ function render(){
       &&(!filtroProv||p.proveedor===filtroProv);
   });
 
+  // Mayor stock primero; los que no tienen stock quedan al final.
+  filtered.sort((a,b)=>(b.stock||0)-(a.stock||0));
+
   if(!filtered.length){
     document.getElementById('table').style.display='none';
     document.getElementById('emptyState').style.display='block';
@@ -363,6 +379,7 @@ function render(){
     return `<tr>
       <td class="sku">${p.sku}</td>
       <td>${p.descripcion}</td>
+      <td><span class="marca">${marcaLabel[p.proveedor]||p.proveedor}</span></td>
       <td class="precio">$${p.precio.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
       <td><span class="badge ${est}"><span class="dot"></span>${estadoLabel[est]}</span></td>
     </tr>`;
@@ -399,11 +416,11 @@ function checkPw(){
   }
 }
 
-// Cargar los 4 proveedores al arrancar
+// Cargar las 4 marcas al arrancar
 Promise.all([loadBin('gamma'),loadBin('lusqtoff'),loadBin('omaha'),loadBin('kld')]).then(()=>{
   document.getElementById('loadingState').style.display='none';
   render();
 });
 </script>
-</body> 
+</body>
 </html>
