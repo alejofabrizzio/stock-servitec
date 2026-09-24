@@ -110,6 +110,17 @@
   .more-btn{display:none;width:100%;margin-top:14px;padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;}
   .more-btn:hover{border-color:var(--accent);color:var(--accent);}
 
+  /* Pie: logo, Instagram y envios */
+  .pie{margin-top:34px;padding:26px 16px 20px;border-top:3px solid var(--accent);text-align:center;}
+  .pie img{width:180px;max-width:60%;height:auto;display:block;margin:0 auto 14px;}
+  .pie a{display:inline-flex;align-items:center;gap:8px;color:var(--text);text-decoration:none;
+         font-size:15px;font-weight:700;padding:9px 16px;border:1px solid var(--border);border-radius:999px;
+         transition:border-color .15s,color .15s;}
+  .pie a:hover{border-color:var(--accent);color:var(--accent);}
+  .pie a svg{width:20px;height:20px;flex:0 0 auto;}
+  .pie .envios{margin-top:12px;font-size:14px;color:var(--muted);font-weight:600;}
+  .pie .envios b{color:var(--accent);}
+
   .loading{text-align:center;color:var(--muted);padding:60px 20px;font-size:14px;}
   .empty{display:none;text-align:center;color:var(--muted);padding:40px;font-size:14px;}
 
@@ -279,6 +290,19 @@
 
   <div class="loading" id="loadingState">Cargando stock...</div>
   <div class="empty" id="emptyState">Sin resultados para ese filtro.</div>
+
+  <footer class="pie">
+    <img src="logo-full.jpg" alt="Servitec MG SRL · Distribuidor" onerror="this.remove()">
+    <a href="https://instagram.com/servitec_mg" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="2" y="2" width="20" height="20" rx="5"></rect>
+        <circle cx="12" cy="12" r="4"></circle>
+        <circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"></circle>
+      </svg>
+      servitec_mg
+    </a>
+    <div class="envios">Envíos a <b>todo el país</b></div>
+  </footer>
 </div>
 
 <div class="viewer" id="viewer">
