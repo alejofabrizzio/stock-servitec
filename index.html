@@ -317,12 +317,12 @@ let seccion = null;
 // La categoria se deduce de la descripcion, porque los Excel no la traen.
 // Gana la primera regla que coincide, asi que el orden importa.
 const CATEGORIAS = [
-  ['Taller y máquinas de banco', /#[^#]*\bshk-?\d|gabinete|kit de herramientas (neumatica|\d+ ?p)|juego de herramientas neumatica|set de herramientas \d+ ?p/],
+  ['Taller y máquinas de banco', /llave de impacto|llave impacto|#[^#]*\bshk-?\d|gabinete|kit de herramientas (neumatica|\d+ ?p)|juego de herramientas neumatica|set de herramientas \d+ ?p/],
   ['Termofusoras', /termofusora|termofusion/],
   ['Cortadoras sensitivas', /sensitiva|tronzadora/],
   ['Pistolas de calor', /pistola de calor|pistola calor|decapador/],
   ['Porta herramientas', /^(\(oferta\)\s*)?(caja|cajon|bolso|mochila|valija|carro|banco|estante|organizador|porta)[a-z ]{0,14}(de |para |porta)?herramienta|^(\(oferta\)\s*)?(caja|cajon|bolso) (de |para )?herramienta/],
-  ['Mecánica', /cargador ?[-\/ ]? ?arrancador|arrancador|cargador (de )?bat|cargador mantenedor|cargador\/arrancador|booster/],
+  ['Taller y máquinas de banco', /cargador ?[-\/ ]? ?arrancador|arrancador|cargador (de )?bat|cargador mantenedor|cargador\/arrancador|booster/],
   ['Outdoor y camping', /botella|vaso termico|taza termica|termo\b|matera|\bmate\b|pava|conservadora|carpa|bolsa de dormir|camping|cantimplora|silla plegable|reposera|mochila/],
   ['Construcción', /rotomartillo|demoledor|martillo (demoledor|electroneumatico|perforador|rotativo)|cortadora de ceramica|cortaceramica|cortadora de porcelanato|ventosa|vibronivelador|vibrador de hormigon|vibradora|motovibrador|hormigonera|mezcladora de hormigon|placa compactadora|compactador|alisador|revocadora|acanaladora|llana/],
   ['Accesorios y consumibles', /tanza|cincel|clip de nivelacion|cunas? de nivelacion|separadores? de baldosa|bateria .*(litio|li-?ion|ah\b)|bateria \d|jgo \d bateria|juego \d bateria|cargador p\/ ?bateria|cargador de bateria para herramienta/],
@@ -352,7 +352,6 @@ const COLORES = {
   'Cortadoras sensitivas':'#b3255f',
   'Pistolas de calor':'#d2600a',
   'Porta herramientas':'#7a4a21',
-  'Mecánica':'#33587a',
   'Outdoor y camping':'#1f6b45',
   'Accesorios y consumibles':'#4a5568',
   'Jardín y exterior':'#12833c',
