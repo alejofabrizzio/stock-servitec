@@ -25,9 +25,15 @@
   .admin-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:7px;font-size:12px;cursor:pointer;flex:0 0 auto;}
   .admin-btn:hover{border-color:var(--accent);color:var(--accent);}
 
-  /* Banner de presentacion del deposito */
-  .hero{margin-bottom:20px;border-radius:12px;overflow:hidden;background:#111;}
-  .hero img{display:block;width:100%;height:300px;object-fit:cover;object-position:center 62%;}
+  /* Carrusel de carteles en la portada */
+  .hero{position:relative;margin-bottom:20px;border-radius:12px;overflow:hidden;background:#111;height:300px;}
+  .hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+            opacity:0;transition:opacity .9s ease;}
+  .hero img.on{opacity:1;}
+  .hero .puntos{position:absolute;left:0;right:0;bottom:10px;display:flex;justify-content:center;gap:7px;z-index:2;}
+  .hero .puntos b{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.5);cursor:pointer;
+                  transition:background .2s,transform .2s;box-shadow:0 0 3px rgba(0,0,0,.5);}
+  .hero .puntos b.on{background:#fff;transform:scale(1.25);}
 
   .upload-section{display:none;margin-bottom:18px;}
   .foto-info{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--accent);
@@ -137,8 +143,7 @@
     .cat .cc{font-size:11px;margin-top:4px;}
     .secbar h2{font-size:15px;}
 
-    .hero{margin-bottom:16px;}
-    .hero img{height:auto;}
+    .hero{margin-bottom:16px;height:230px;}
 
     .upload-grid{grid-template-columns:1fr;}
 
@@ -195,8 +200,12 @@
     <button class="admin-btn" id="adminToggle">Admin</button>
   </header>
 
-  <div class="hero">
-    <img src="deposito.jpg" alt="Depósito Servitec" onerror="this.parentNode.style.display='none'">
+  <div class="hero" id="hero">
+    <img src="hero1.jpg" class="on" alt="Servitec" onerror="this.remove()">
+    <img src="hero2.jpg" alt="" loading="lazy" onerror="this.remove()">
+    <img src="hero3.jpg" alt="" loading="lazy" onerror="this.remove()">
+    <img src="hero4.jpg" alt="" loading="lazy" onerror="this.remove()">
+    <div class="puntos" id="heroPuntos"></div>
   </div>
 
   <div class="upload-section" id="uploadSection">
@@ -759,6 +768,33 @@ function checkPw(){
     document.getElementById('pwError').style.display='block';
   }
 }
+
+// Carrusel de la portada: los carteles van rotando solos
+(function(){
+  const hero=document.getElementById('hero');
+  if(!hero) return;
+  const imgs=[...hero.querySelectorAll('img')];
+  if(imgs.length<2){ const p=document.getElementById('heroPuntos'); if(p) p.remove(); return; }
+  const cont=document.getElementById('heroPuntos');
+  imgs.forEach((_,i)=>{
+    const b=document.createElement('b');
+    if(i===0) b.className='on';
+    b.addEventListener('click',()=>mostrar(i));
+    cont.appendChild(b);
+  });
+  const puntos=[...cont.children];
+  let act=0, timer=null;
+  function mostrar(i){
+    act=(i+imgs.length)%imgs.length;
+    imgs.forEach((im,k)=>im.classList.toggle('on',k===act));
+    puntos.forEach((b,k)=>b.classList.toggle('on',k===act));
+    reiniciar();
+  }
+  function reiniciar(){ clearInterval(timer); timer=setInterval(()=>mostrar(act+1),5000); }
+  reiniciar();
+  // no gastar batería ni datos cuando la pestaña no se ve
+  document.addEventListener('visibilitychange',()=>{ document.hidden?clearInterval(timer):reiniciar(); });
+})();
 
 // Cargar las 4 marcas al arrancar
 Promise.all([loadBin('gamma'),loadBin('lusqtoff'),loadBin('omaha'),loadBin('kld'),cargarFotos()]).then(()=>{
