@@ -166,17 +166,10 @@
 </div>
 
 <script>
-const JSONBIN_KEY = '$2a$10$VEZjI7i4IvGcTAgbUupJ2e6DLdWRgfy8.kAxyu0tbzMNZkjodjlRG';
 const ADMIN_PASS = 'servitec2026';
-
-const BINS = {
-  gamma:    '6a447181f5f4af5e294ab48f',
-  omaha:    '6a445359da38895dfe18bda9'
-};
 
 const SUPABASE_URL = 'https://qounuojfvvsgfdbpdyhu.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_tV7fygkcvybWRoUqZINVYA_MKUmzpDf';
-const SUPABASE_PROVIDERS = ['lusqtoff','kld'];
 
 let data = { gamma:[], lusqtoff:[], omaha:[], kld:[] };
 let lastUpdate = null;
@@ -191,55 +184,36 @@ function fmtFecha(iso){
 
 async function loadBin(prov){
   try{
-    if(SUPABASE_PROVIDERS.includes(prov)){
-      const r = await fetch(`${SUPABASE_URL}/rest/v1/productos?proveedor=eq.${prov}&select=productos,last_update`,{
-        headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`}
-      });
-      if(!r.ok) return;
-      const rows = await r.json();
-      const row = rows[0];
-      data[prov] = (row && row.productos) || [];
-      if(row && row.last_update && (!lastUpdate || row.last_update > lastUpdate)) lastUpdate = row.last_update;
-      return;
-    }
-    const r = await fetch(`https://api.jsonbin.io/v3/b/${BINS[prov]}/latest`,{
-      headers:{'X-Master-Key':JSONBIN_KEY,'X-Bin-Meta':'false'}
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/productos?proveedor=eq.${prov}&select=productos,last_update`,{
+      headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`}
     });
     if(!r.ok) return;
-    const d = await r.json();
-    data[prov] = d.productos || [];
-    if(d.lastUpdate && (!lastUpdate || d.lastUpdate > lastUpdate)) lastUpdate = d.lastUpdate;
+    const rows = await r.json();
+    const row = rows[0];
+    data[prov] = (row && row.productos) || [];
+    if(row && row.last_update && (!lastUpdate || row.last_update > lastUpdate)) lastUpdate = row.last_update;
   }catch(e){ console.error(prov, e); }
 }
 
 async function saveBin(prov, productos){
   const ts = new Date().toISOString();
-  if(SUPABASE_PROVIDERS.includes(prov)){
-    const check = await fetch(`${SUPABASE_URL}/rest/v1/productos?proveedor=eq.${prov}&select=id`,{
-      headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`}
-    });
-    const existing = await check.json();
-    if(existing && existing.length){
-      await fetch(`${SUPABASE_URL}/rest/v1/productos?id=eq.${existing[0].id}`,{
-        method:'PATCH',
-        headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`,'Prefer':'return=minimal'},
-        body:JSON.stringify({productos, last_update: ts})
-      });
-    }else{
-      await fetch(`${SUPABASE_URL}/rest/v1/productos`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`,'Prefer':'return=minimal'},
-        body:JSON.stringify({proveedor: prov, productos, last_update: ts})
-      });
-    }
-    lastUpdate = ts;
-    return;
-  }
-  await fetch(`https://api.jsonbin.io/v3/b/${BINS[prov]}`,{
-    method:'PUT',
-    headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY},
-    body:JSON.stringify({productos, lastUpdate: ts})
+  const check = await fetch(`${SUPABASE_URL}/rest/v1/productos?proveedor=eq.${prov}&select=id`,{
+    headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`}
   });
+  const existing = await check.json();
+  if(existing && existing.length){
+    await fetch(`${SUPABASE_URL}/rest/v1/productos?id=eq.${existing[0].id}`,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`,'Prefer':'return=minimal'},
+      body:JSON.stringify({productos, last_update: ts})
+    });
+  }else{
+    await fetch(`${SUPABASE_URL}/rest/v1/productos`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`,'Prefer':'return=minimal'},
+      body:JSON.stringify({proveedor: prov, productos, last_update: ts})
+    });
+  }
   lastUpdate = ts;
 }
 
