@@ -62,6 +62,23 @@
   .stat.poco .n{color:var(--poco);}
   .stat.no .n{color:var(--no);}
 
+  /* Novedades: los destacados del momento */
+  .novedades{display:none;margin-bottom:22px;border:1px solid var(--border);border-radius:12px;
+             background:var(--panel);overflow:hidden;}
+  .novedades h2{display:flex;align-items:center;gap:9px;margin:0;padding:12px 15px;font-size:14px;
+                background:var(--accent);color:#fff;letter-spacing:.6px;text-transform:uppercase;}
+  .novedades h2 span{font-size:11px;font-weight:600;opacity:.85;text-transform:none;letter-spacing:0;}
+  .nov-fila{display:flex;gap:12px;padding:14px 15px;overflow-x:auto;scroll-snap-type:x mandatory;
+            -webkit-overflow-scrolling:touch;}
+  .nov{flex:0 0 150px;scroll-snap-align:start;background:var(--panel2);border:1px solid var(--border);
+       border-radius:10px;padding:10px;cursor:pointer;text-align:left;font-family:inherit;
+       transition:border-color .15s,transform .1s;}
+  .nov:hover{border-color:var(--accent);transform:translateY(-2px);}
+  .nov img{width:100%;height:100px;object-fit:contain;background:#fff;border-radius:6px;margin-bottom:8px;}
+  .nov .nt{font-size:12px;font-weight:700;color:var(--text);line-height:1.3;
+           display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+  .nov .nm{font-size:10px;color:var(--muted);margin-top:5px;text-transform:uppercase;letter-spacing:.3px;}
+
   /* Pantalla principal: secciones */
   .home{display:none;}
   .home-title{font-size:13px;color:var(--muted);margin:0 0 12px 0;font-weight:600;}
@@ -276,6 +293,10 @@
   </div>
 
   <div class="home" id="home">
+    <div class="novedades" id="novedades">
+      <h2>Novedades <span>lo último que llegó</span></h2>
+      <div class="nov-fila" id="novFila"></div>
+    </div>
     <p class="home-title">Elegí una sección</p>
     <div class="cats" id="cats"></div>
   </div>
@@ -298,7 +319,7 @@
         <circle cx="12" cy="12" r="4"></circle>
         <circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"></circle>
       </svg>
-      servitec_mg
+      Seguinos en Instagram
     </a>
     <div class="envios">Envíos a <b>todo el país</b></div>
     <button class="admin-btn" id="adminToggle">Admin</button>
@@ -399,6 +420,9 @@ const COLORES = {
 };
 
 const OTROS = 'Otros';
+
+// Destacados de la portada. Para cambiarlos, editar esta lista de SKU.
+const NOVEDADES = ['WDFWTVM1D1284','TIL45-8BK','KLDDE55','OM 440.RM-32PLUSSPECIAL','WDFWCDP62814','GM HU008'];
 
 // --- Fotos de producto (Supabase Storage) -----------------------------
 // El bucket se lee UNA sola vez al arrancar y se arma un indice por SKU.
@@ -594,6 +618,22 @@ function getAllProductos(){
   return [...data.gamma, ...data.lusqtoff, ...data.omaha, ...data.kld];
 }
 
+function pintarNovedades(todos){
+  const caja=document.getElementById('novedades'), fila=document.getElementById('novFila');
+  const porSku={}; todos.forEach(p=>porSku[claveFoto(p.sku)]=p);
+  const items=NOVEDADES.map(s=>porSku[claveFoto(s)]).filter(Boolean);
+  if(!items.length){ caja.style.display='none'; return; }
+  caja.style.display='block';
+  fila.innerHTML=items.map(p=>{
+    const f=fotoDe(p);
+    return `<button class="nov" data-sku="${p.sku}">
+      ${f?`<img src="${f}" loading="lazy" alt="">`:''}
+      <div class="nt">${p.descripcion.replace(/^\(oferta\)\s*/i,'').split('|')[0].trim()}</div>
+      <div class="nm">${marcaLabel[p.proveedor]||p.proveedor}</div>
+    </button>`;
+  }).join('');
+}
+
 function pintarSecciones(todos){
   const cuenta = {}, conStock = {};
   todos.forEach(p=>{
@@ -652,6 +692,7 @@ function render(){
 
   const enPortada = !seccion && !search;
   document.getElementById('home').style.display = enPortada?'block':'none';
+  if(!enPortada){ const nv=document.getElementById('novedades'); if(nv) nv.style.display='none'; }
   document.getElementById('secbar').style.display = seccion?'flex':'none';
   document.getElementById('secTitle').textContent = seccion||'';
   document.getElementById('controls').style.display='flex';
@@ -660,6 +701,7 @@ function render(){
   document.getElementById('filterProv').style.display = enPortada?'none':'block';
 
   if(enPortada){
+    pintarNovedades(todos);
     pintarSecciones(todos);
     document.getElementById('table').style.display='none';
     document.getElementById('moreBtn').style.display='none';
@@ -734,6 +776,15 @@ document.getElementById('viewer').addEventListener('click',()=>{
 });
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape') document.getElementById('viewer').classList.remove('open');
+});
+
+document.getElementById('novFila').addEventListener('click',e=>{
+  const b=e.target.closest('.nov');
+  if(!b) return;
+  seccion=null; limite=PASO;
+  document.getElementById('search').value=b.dataset.sku;
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
 });
 
 document.getElementById('cats').addEventListener('click',e=>{
