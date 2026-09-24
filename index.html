@@ -97,6 +97,14 @@
   .back-btn:hover{border-color:var(--accent);color:var(--accent);}
   .secbar h2{margin:0;font-size:16px;font-weight:700;}
 
+  /* Subsecciones dentro de una seccion */
+  .subs{display:none;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+  .subs button{background:var(--panel2);border:1px solid var(--border);color:var(--muted);
+               padding:7px 13px;border-radius:999px;font-size:12.5px;font-weight:600;cursor:pointer;
+               font-family:inherit;transition:all .15s;}
+  .subs button:hover{border-color:var(--accent);color:var(--accent);}
+  .subs button.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+
   .controls{display:none;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
   input[type=text]{flex:1 0 100%;background:var(--panel2);border:2px solid var(--border);color:var(--text);
                    padding:15px 18px;border-radius:10px;font-size:17px;font-weight:500;}
@@ -274,6 +282,8 @@
     <h2 id="secTitle"></h2>
   </div>
 
+  <div class="subs" id="subs"></div>
+
   <div class="controls" id="controls">
     <input type="text" id="search" placeholder="Buscar por SKU o descripción...">
     <select id="filterEstado">
@@ -420,6 +430,36 @@ const COLORES = {
 };
 
 const OTROS = 'Otros';
+
+// Subsecciones dentro de una seccion. Gana la primera que coincide.
+const SUBSECCIONES = {
+  'Taller y máquinas de banco': [
+    ['Llaves de impacto', /llave de impacto|llave impacto/],
+    ['Cargadores y arrancadores', /cargador|arrancador|booster/],
+    ['Sets de herramientas', /\bset\b|\bkit\b|juego|jgo|\d+ ?(pz|pcs|piezas)/],
+    ['Muebles y bancos', /mueble|banco|mesa|carro|gabinete|estante|organizador|apilador|zorra|transpaleta/],
+  ],
+  'Construcción': [
+    ['Ventosas', /ventosa/],
+    ['Cortadoras de cerámica', /cortadora de ceramica|cortaceramica|cortadora de porcelanato/],
+    ['Demoledores', /demoledor/],
+    ['Rotomartillos', /rotomartillo/],
+  ],
+  'Herramientas manuales': [
+    ['Llaves', /llave/],
+    ['Pinzas', /pinza|alicate|tenaza/],
+    ['Sets y combos', /\bset\b|\bkit\b|combo|juego|jgo/],
+  ],
+};
+let subsec = null;
+
+function subDe(p, seccionNombre){
+  const defs = SUBSECCIONES[seccionNombre];
+  if(!defs) return null;
+  const t = normalizar(p.descripcion||'') + ' # ' + normalizar(p.sku||'');
+  for(const [nombre,rx] of defs){ if(rx.test(t)) return nombre; }
+  return null;
+}
 
 // Destacados de la portada. Para cambiarlos, editar esta lista de SKU.
 const NOVEDADES = ['WDFWTVM1D1284','TIL45-8BK','KLDDE55','OM 440.RM-32PLUSSPECIAL','WDFWCDP62814','GM HU008'];
@@ -651,6 +691,7 @@ function pintarSecciones(todos){
 
 function abrirSeccion(c){
   seccion = c;
+  subsec = null;
   limite = PASO;
   document.getElementById('search').value = '';
   document.getElementById('filterEstado').value = '';
@@ -709,7 +750,23 @@ function render(){
     return;
   }
 
-  const filtered=base.filter(p=>{
+  // chips de subseccion
+  const cajaSubs=document.getElementById('subs');
+  const defs = seccion ? SUBSECCIONES[seccion] : null;
+  if(defs && !search){
+    const cuenta={};
+    base.forEach(p=>{ const sb=subDe(p,seccion); if(sb) cuenta[sb]=(cuenta[sb]||0)+1; });
+    const hay=defs.filter(d=>cuenta[d[0]]);
+    if(hay.length){
+      cajaSubs.style.display='flex';
+      cajaSubs.innerHTML=`<button class="${subsec?'':'on'}" data-sub="">Todo (${base.length})</button>`+
+        hay.map(d=>`<button class="${subsec===d[0]?'on':''}" data-sub="${d[0]}">${d[0]} (${cuenta[d[0]]})</button>`).join('');
+    } else { cajaSubs.style.display='none'; subsec=null; }
+  } else { cajaSubs.style.display='none'; }
+
+  const conSub = (subsec && defs) ? base.filter(p=>subDe(p,seccion)===subsec) : base;
+
+  const filtered=conSub.filter(p=>{
     return(!search||p.sku.toLowerCase().includes(search)||p.descripcion.toLowerCase().includes(search))
       &&(!filtroEst||estadoStock(p.stock)===filtroEst)
       &&(!filtroProv||p.proveedor===filtroProv);
@@ -787,12 +844,21 @@ document.getElementById('novFila').addEventListener('click',e=>{
   window.scrollTo({top:0,behavior:'smooth'});
 });
 
+document.getElementById('subs').addEventListener('click',e=>{
+  const b=e.target.closest('button');
+  if(!b) return;
+  subsec = b.dataset.sub || null;
+  limite = PASO;
+  render();
+});
+
 document.getElementById('cats').addEventListener('click',e=>{
   const b = e.target.closest('.cat');
   if(b) abrirSeccion(b.dataset.cat);
 });
 document.getElementById('backBtn').addEventListener('click',()=>{
   seccion = null;
+  subsec = null;
   limite = PASO;
   document.getElementById('search').value='';
   document.getElementById('filterEstado').value='';
