@@ -30,6 +30,9 @@
   .hero img{display:block;width:100%;height:300px;object-fit:cover;object-position:center 62%;}
 
   .upload-section{display:none;margin-bottom:18px;}
+  .foto-info{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--accent);
+             border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--muted);}
+  .foto-info b{color:var(--text);}
   .upload-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
   .upload-box{background:var(--panel);border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;}
   .upload-box.loaded{border-color:var(--mucho);border-style:solid;}
@@ -82,6 +85,7 @@
   thead th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:10px 12px;border-bottom:2px solid var(--border);}
   tbody td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;}
   tbody tr:hover{background:var(--panel);}
+  .thumb{width:46px;height:46px;object-fit:cover;border-radius:6px;border:1px solid var(--border);background:var(--panel);display:block;cursor:zoom-in;}
   .sku{color:var(--muted);font-family:monospace;font-size:12px;}
   .precio{font-weight:600;}
   .marca{display:inline-block;padding:3px 9px;border-radius:6px;background:var(--panel);border:1px solid var(--border);font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
@@ -101,6 +105,12 @@
 
   .loading{text-align:center;color:var(--muted);padding:60px 20px;font-size:14px;}
   .empty{display:none;text-align:center;color:var(--muted);padding:40px;font-size:14px;}
+
+  /* Visor de foto ampliada */
+  .viewer{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:60;padding:20px;cursor:zoom-out;}
+  .viewer.open{display:flex;}
+  .viewer img{max-width:100%;max-height:82vh;border-radius:10px;background:#fff;}
+  .viewer .vcap{position:absolute;bottom:18px;left:0;right:0;text-align:center;color:#fff;font-size:13px;padding:0 20px;}
 
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:50;}
   .modal-overlay.open{display:flex;}
@@ -155,11 +165,14 @@
     tbody tr:hover{background:var(--panel2);}
     tbody td{display:block;border:none;padding:0;}
     /* Orden dentro de la tarjeta: descripcion, luego SKU + marca + estado, luego precio */
-    tbody td:nth-child(2){order:1;flex:1 0 100%;font-size:14px;font-weight:600;line-height:1.35;}
-    tbody td:nth-child(1){order:2;}
-    tbody td:nth-child(3){order:3;}
-    tbody td:nth-child(5){order:4;margin-left:auto;}
-    tbody td:nth-child(4){order:5;flex:1 0 100%;font-size:17px;color:var(--accent);}
+    tbody td:nth-child(1){order:0;flex:0 0 auto;}
+    tbody td:nth-child(1):empty{display:none;}
+    tbody td:nth-child(1) .thumb{width:62px;height:62px;}
+    tbody td:nth-child(3){order:1;flex:1 1 140px;font-size:14px;font-weight:600;line-height:1.35;}
+    tbody td:nth-child(2){order:2;}
+    tbody td:nth-child(4){order:3;}
+    tbody td:nth-child(6){order:4;margin-left:auto;}
+    tbody td:nth-child(5){order:5;flex:1 0 100%;font-size:17px;color:var(--accent);}
   }
 
   @media(max-width:600px){
@@ -185,6 +198,7 @@
   </div>
 
   <div class="upload-section" id="uploadSection">
+    <div class="foto-info" id="fotoInfo"></div>
     <div class="upload-grid">
       <div class="upload-box" id="box-gamma">
         <h3>Gamma</h3>
@@ -246,7 +260,7 @@
   </div>
 
   <table id="table">
-    <thead><tr><th>SKU</th><th>Descripción</th><th>Marca</th><th>Precio Lista</th><th>Estado</th></tr></thead>
+    <thead><tr><th id="thFoto">Foto</th><th>SKU</th><th>Descripción</th><th>Marca</th><th>Precio Lista</th><th>Estado</th></tr></thead>
     <tbody id="tbody"></tbody>
   </table>
 
@@ -254,6 +268,11 @@
 
   <div class="loading" id="loadingState">Cargando stock...</div>
   <div class="empty" id="emptyState">Sin resultados para ese filtro.</div>
+</div>
+
+<div class="viewer" id="viewer">
+  <img id="viewerImg" src="" alt="">
+  <div class="vcap" id="viewerCap"></div>
 </div>
 
 <div class="modal-overlay" id="pwModal">
@@ -335,6 +354,44 @@ const COLORES = {
 };
 
 const OTROS = 'Otros';
+
+// --- Fotos de producto (Supabase Storage) -----------------------------
+// El bucket se lee UNA sola vez al arrancar y se arma un indice por SKU.
+// Asi no se piden fotos que no existen: el SKU sin foto simplemente no la muestra.
+const BUCKET_FOTOS = 'fotos';
+let fotos = {};
+
+// Clave floja: ignora mayusculas, espacios, puntos y guiones. De esta forma
+// da igual si el archivo se llama "OM 471.DFZ4580.jpg" o "om-471-dfz4580.webp".
+function claveFoto(t){
+  return (t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+}
+
+async function cargarFotos(){
+  let offset = 0;
+  try{
+    while(offset < 20000){
+      const r = await fetch(`${SUPABASE_URL}/storage/v1/object/list/${BUCKET_FOTOS}`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`},
+        body:JSON.stringify({prefix:'',limit:1000,offset,sortBy:{column:'name',order:'asc'}})
+      });
+      if(!r.ok) return;
+      const lista = await r.json();
+      if(!Array.isArray(lista) || !lista.length) return;
+      lista.forEach(o=>{
+        if(!o || !o.name || !/\.(jpe?g|png|webp|gif|avif)$/i.test(o.name)) return;
+        const base = o.name.replace(/\.[^.]+$/,'');
+        const k = claveFoto(base);
+        if(k && !fotos[k]) fotos[k] = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_FOTOS}/${encodeURIComponent(o.name)}`;
+      });
+      if(lista.length < 1000) return;
+      offset += 1000;
+    }
+  }catch(e){ console.warn('No se pudieron leer las fotos:', e); }
+}
+
+function fotoDe(p){ return fotos[claveFoto(p.sku)] || ''; }
 
 function normalizar(t){
   return t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -596,9 +653,15 @@ function render(){
     moreBtn.style.display='none';
   }
 
+  // La columna de fotos aparece sola cuando hay fotos cargadas en Supabase
+  const hayFotos = Object.keys(fotos).length > 0;
+  document.getElementById('thFoto').style.display = hayFotos?'':'none';
+
   document.getElementById('tbody').innerHTML=visibles.map(p=>{
     const est=estadoStock(p.stock);
+    const f = hayFotos ? fotoDe(p) : '';
     return `<tr>
+      ${hayFotos ? `<td>${f?`<img class="thumb" src="${f}" loading="lazy" decoding="async" alt="" data-sku="${p.sku}">`:''}</td>` : ''}
       <td class="sku">${p.sku}</td>
       <td>${p.descripcion}</td>
       <td><span class="marca">${marcaLabel[p.proveedor]||p.proveedor}</span></td>
@@ -613,6 +676,21 @@ document.getElementById('search').addEventListener('input',filtrar);
 document.getElementById('filterEstado').addEventListener('change',filtrar);
 document.getElementById('filterProv').addEventListener('change',filtrar);
 document.getElementById('moreBtn').addEventListener('click',()=>{ limite += PASO*2; render(); });
+
+document.getElementById('tbody').addEventListener('click',e=>{
+  const img = e.target.closest('.thumb');
+  if(!img) return;
+  document.getElementById('viewerImg').src = img.src;
+  document.getElementById('viewerCap').textContent = img.dataset.sku||'';
+  document.getElementById('viewer').classList.add('open');
+});
+document.getElementById('viewer').addEventListener('click',()=>{
+  document.getElementById('viewer').classList.remove('open');
+  document.getElementById('viewerImg').src='';
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') document.getElementById('viewer').classList.remove('open');
+});
 
 document.getElementById('cats').addEventListener('click',e=>{
   const b = e.target.closest('.cat');
@@ -644,12 +722,26 @@ document.getElementById('adminToggle').addEventListener('click',()=>{
 document.getElementById('pwCancel').addEventListener('click',()=>document.getElementById('pwModal').classList.remove('open'));
 document.getElementById('pwConfirm').addEventListener('click',checkPw);
 document.getElementById('pwInput').addEventListener('keydown',e=>{if(e.key==='Enter')checkPw();});
+// Cuantos productos ya tienen foto, para seguir el avance de la carga
+function infoFotos(){
+  const todos = getAllProductos();
+  const con = todos.filter(p=>fotoDe(p)).length;
+  const el = document.getElementById('fotoInfo');
+  if(!Object.keys(fotos).length){
+    el.innerHTML = `Todavía no hay fotos. Creá el bucket público <b>${BUCKET_FOTOS}</b> en Supabase Storage y subí las imágenes con el SKU como nombre de archivo.`;
+    return;
+  }
+  const falta = todos.length - con;
+  el.innerHTML = `Fotos: <b>${con}</b> de ${todos.length} productos (${Math.round(100*con/todos.length)}%). Faltan <b>${falta}</b>.`;
+}
+
 function checkPw(){
   if(document.getElementById('pwInput').value===ADMIN_PASS){
     isAdmin=true;
     document.getElementById('pwModal').classList.remove('open');
     document.getElementById('uploadSection').style.display='block';
     document.getElementById('adminToggle').textContent='Salir';
+    infoFotos();
     render();
   }else{
     document.getElementById('pwError').style.display='block';
@@ -657,7 +749,7 @@ function checkPw(){
 }
 
 // Cargar las 4 marcas al arrancar
-Promise.all([loadBin('gamma'),loadBin('lusqtoff'),loadBin('omaha'),loadBin('kld')]).then(()=>{
+Promise.all([loadBin('gamma'),loadBin('lusqtoff'),loadBin('omaha'),loadBin('kld'),cargarFotos()]).then(()=>{
   document.getElementById('loadingState').style.display='none';
   render();
 });
