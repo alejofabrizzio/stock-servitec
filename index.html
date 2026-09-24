@@ -52,6 +52,22 @@
   .stat.poco .n{color:var(--poco);}
   .stat.no .n{color:var(--no);}
 
+  /* Pantalla principal: secciones */
+  .home{display:none;}
+  .home-title{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:0 0 12px 0;font-weight:700;}
+  .cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
+  .cat{text-align:left;background:var(--panel2);border:1px solid var(--border);border-top:3px solid var(--accent);border-radius:10px;padding:14px;cursor:pointer;font-family:inherit;transition:border-color .15s,transform .1s;}
+  .cat:hover{border-color:var(--accent);transform:translateY(-2px);}
+  .cat .cn{font-size:14px;font-weight:700;color:var(--text);line-height:1.3;}
+  .cat .cc{font-size:12px;color:var(--muted);margin-top:6px;}
+  .cat .cc b{color:var(--mucho);font-weight:700;}
+
+  /* Barra de la seccion abierta */
+  .secbar{display:none;align-items:center;gap:12px;margin-bottom:14px;}
+  .back-btn{background:var(--panel);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:600;flex:0 0 auto;}
+  .back-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .secbar h2{margin:0;font-size:16px;font-weight:700;}
+
   .controls{display:none;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
   input[type=text]{flex:1;min-width:200px;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:14px;}
   input[type=text]:focus,select:focus{outline:none;border-color:var(--accent);}
@@ -99,6 +115,12 @@
     .brand img{width:38px;height:38px;border-radius:8px;}
     h1{font-size:16px;}
     .sub{font-size:11px;}
+
+    .cats{grid-template-columns:repeat(2,1fr);gap:10px;}
+    .cat{padding:11px;}
+    .cat .cn{font-size:13px;}
+    .cat .cc{font-size:11px;margin-top:4px;}
+    .secbar h2{font-size:15px;}
 
     .hero{margin-bottom:16px;}
     .hero img{height:auto;}
@@ -190,6 +212,11 @@
     <div class="stat no"><div class="n" id="statNo">0</div><div class="l">Sin stock</div></div>
   </div>
 
+  <div class="secbar" id="secbar">
+    <button class="back-btn" id="backBtn">← Secciones</button>
+    <h2 id="secTitle"></h2>
+  </div>
+
   <div class="controls" id="controls">
     <input type="text" id="search" placeholder="Buscar por SKU o descripción...">
     <select id="filterEstado">
@@ -206,6 +233,11 @@
       <option value="omaha">Omaha</option>
       <option value="kld">KLD</option>
     </select>
+  </div>
+
+  <div class="home" id="home">
+    <p class="home-title">Elegí una sección</p>
+    <div class="cats" id="cats"></div>
   </div>
 
   <table id="table">
@@ -243,6 +275,46 @@ let isAdmin = false;
 // Cuantos resultados se dibujan de una. Evita colgar el telefono con miles de filas.
 const PASO = 100;
 let limite = PASO;
+// Seccion abierta. null = pantalla principal con las secciones.
+let seccion = null;
+
+// La categoria se deduce de la descripcion, porque los Excel no la traen.
+// Gana la primera regla que coincide, asi que el orden importa.
+const CATEGORIAS = [
+  ['Taladros y atornilladores', /taladro|rotomartillo|percutor|demoledor|atornillador|destornillador electrico|llave de impacto|martillo (electrico|demoledor|perforador|neumatico|rotativo)|mezclador|revolvedora|agujereadora/],
+  ['Amoladoras y cortadoras', /amoladora|tronzadora|cortahierro|cortadora|cortaceramica|multi.?cortadora|multi.?herramienta|cortaceramic|sensitiva|acanaladora|amoladoras/],
+  ['Sierras y carpintería', /sierra|caladora|inglet|cepillad|cepillo (electrico|rebajador)|garlopa|router|fresadora|combinada \d|biseladora|torno para madera|lijadora de banda/],
+  ['Lijadoras y pulidoras', /lijadora|pulidora|orbital|abrillantadora/],
+  ['Soldadura', /soldador|soldadura|soldar|inverter|electrodo|masc ?p\/ ?sold|careta|\bmig\b|\btig\b|\bmma\b|estanar|oxicorte|antorcha|plasma|termofusora/],
+  ['Compresores y pintura', /compresor|neumatic|pistola|aerografo|soplete|p\/ ?pintar|para pintar|airless|arenadora|acople rapido|manguera de aire|inflador|regulador de presion/],
+  ['Hidrolavadoras y aspiradoras', /hidrolav|aspirador|karcher|barredora|lustradora|limpiavidrio|limpiador|a vapor|alta presion/],
+  ['Bombas y agua', /bomba|electrobomba|presurizador|termotanque|calefon|tanque de agua|flotante/],
+  ['Jardín y exterior', /desmalezadora|motosierra|bordeadora|cortacerco|corta cerco|cortacesped|cesped|sopladora|soplador|fumigad|pulverizadora|motoguadana|tanza|podador|podar|pala\b|azada|rastrillo|carretilla|riego|motocultivador|motoazada|astilladora|chipeadora|espada|guadana|jardin/],
+  ['Generadores y energía', /generador|grupo electr|\bmotor\b|motobomba|motocompresor|bateria|cargador|\bups\b|estabilizador|inversor|panel solar/],
+  ['Taller y máquinas de banco', /morsa|prensa|\btorno\b|esmeril|banco de trabajo|de banco|aparejo|crique|gato hidraulic|gato de|\bcarro\b|caja (de |para )?herramienta|bolso (de |para )?herramienta|gabinete|cajon organizador|organizador|guinche|malacate|tecle|camilla para mecanico|rampa para moto|plataforma de carga|expansor hidraulic|dobladora|cizalla|compactador|hormigonera|mezcladora|vibrador de hormigon|apilador|banco porta|bandeja para pieza|zorra|transpaleta|mesa de trabajo|torqui/],
+  ['Herramientas manuales', /llave|vaso\b|alicate|pinza|martillo|maza|destornillador|atornillador|formon|serrucho|lima\b|cincel|punzon|remachadora|arco de sierra|tenaza|cutter|trincheta|engrampadora|grampa|clavo|tornillo|bulon|juego de|jgo|\bset\b|\bkit\b|combo|espatula|llana|balde|pincel|rodillo|hacha|machete|barreta|extractor|terraja|macho de roscar|cortacano|tijera|separadores de baldosa|separador de baldosa|alisador|cuna de nivelacion|cunas de nivelacion|clip de nivelacion|regla\b/],
+  ['Medición y nivelación', /nivel|escuadra|\bmetro\b|cinta metrica|calibre|distanciometro|laser|plomada|balanza|termometro|multimetro|tester|amperometrica|detector|manometro/],
+  ['Escaleras y andamios', /escalera|andamio|caballete|tablon/],
+  ['Seguridad y protección', /casco|guante|antiparra|protector|arnes|chaleco|botin|calzado|mascara|barbijo|respirador|\bfaja\b|rodillera|matafuego|botiquin|senalizacion/],
+  ['Iluminación y electricidad', /\bluz\b|luces|linterna|reflector|\bled\b|lampara|iluminacion|prolongador|zapatilla|\bcable\b|ficha\b|termica|disyuntor|tablero|portalampara|transformador|enchufe|interruptor/],
+  ['Outdoor y camping', /termo\b|\bmate\b|matera|pava|mochila|bolso|conservadora|carpa|bolsa de dormir|camping|canoa|cantimplora|vaso termico|botella|silla plegable|reposera/],
+  ['Climatización y hogar', /calefactor|estufa|ventilador|aire acondicionado|calefaccion|deshumidificador|purificador|caloventor|secarropa|parrilla|anafe|cocina|hidromasaje/],
+  ['Accesorios y consumibles', /disco|hoja de|mecha|broca|fresa|cadena|filtro|aceite|grasa|correa|bujia|repuesto|adaptador|mandril|piedra|abrasivo|lija|soga|cinta|carbon|rodamiento|acople|boquilla|manguera|placa|bolsa|rodel|aros piston|\barranque\b|carburador|piston|empaquetadura|bidon|aerosol|antiadherente|acrilico|silicona|espuma|pegamento|cola vinilica|cinta aisladora|tungsteno|rueda|ruedas|tapa\b|resorte|embrague|bobina/],
+];
+const OTROS = 'Otros';
+
+function normalizar(t){
+  return t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function categoriaDe(p){
+  if(p._cat) return p._cat;
+  const t = normalizar(p.descripcion||'');
+  for(const [nombre,rx] of CATEGORIAS){
+    if(rx.test(t)){ p._cat = nombre; return nombre; }
+  }
+  p._cat = OTROS;
+  return OTROS;
+}
 
 function estadoStock(s){ return s>20?'mucho':s>=10?'medio':s>=1?'poco':'no'; }
 const estadoLabel = {mucho:'Mucho',medio:'Medio',poco:'Poco',no:'Sin stock'};
@@ -386,6 +458,31 @@ function getAllProductos(){
   return [...data.gamma, ...data.lusqtoff, ...data.omaha, ...data.kld];
 }
 
+function pintarSecciones(todos){
+  const cuenta = {}, conStock = {};
+  todos.forEach(p=>{
+    const c = categoriaDe(p);
+    cuenta[c] = (cuenta[c]||0)+1;
+    if(p.stock>0) conStock[c] = (conStock[c]||0)+1;
+  });
+  const orden = CATEGORIAS.map(c=>c[0]).concat([OTROS]);
+  document.getElementById('cats').innerHTML = orden.filter(c=>cuenta[c]).map(c=>`
+    <button class="cat" data-cat="${c}">
+      <div class="cn">${c}</div>
+      <div class="cc"><b>${conStock[c]||0}</b> con stock · ${cuenta[c]} en total</div>
+    </button>`).join('');
+}
+
+function abrirSeccion(c){
+  seccion = c;
+  limite = PASO;
+  document.getElementById('search').value = '';
+  document.getElementById('filterEstado').value = '';
+  document.getElementById('filterProv').value = '';
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
 function render(){
   const todos = getAllProductos();
   const search = document.getElementById('search').value.toLowerCase();
@@ -405,19 +502,38 @@ function render(){
   }
 
   document.getElementById('subtitle').textContent=`${todos.length} productos · actualizado ${fmtFecha(lastUpdate)}`;
+  document.getElementById('loadingState').style.display='none';
+
+  // El listado arranca en la seccion abierta; en la principal, en todo el catalogo
+  const base = seccion ? todos.filter(p=>categoriaDe(p)===seccion) : todos;
 
   const counts={mucho:0,medio:0,poco:0,no:0};
-  todos.forEach(p=>counts[estadoStock(p.stock)]++);
-  document.getElementById('statTotal').textContent=todos.length;
+  base.forEach(p=>counts[estadoStock(p.stock)]++);
+  document.getElementById('statTotal').textContent=base.length;
   document.getElementById('statMucho').textContent=counts.mucho;
   document.getElementById('statMedio').textContent=counts.medio;
   document.getElementById('statPoco').textContent=counts.poco;
   document.getElementById('statNo').textContent=counts.no;
   document.getElementById('stats').style.display='grid';
-  document.getElementById('controls').style.display='flex';
-  document.getElementById('loadingState').style.display='none';
 
-  const filtered=todos.filter(p=>{
+  const enPortada = !seccion && !search;
+  document.getElementById('home').style.display = enPortada?'block':'none';
+  document.getElementById('secbar').style.display = seccion?'flex':'none';
+  document.getElementById('secTitle').textContent = seccion||'';
+  document.getElementById('controls').style.display='flex';
+  // En la pantalla principal solo hace falta el buscador
+  document.getElementById('filterEstado').style.display = enPortada?'none':'block';
+  document.getElementById('filterProv').style.display = enPortada?'none':'block';
+
+  if(enPortada){
+    pintarSecciones(todos);
+    document.getElementById('table').style.display='none';
+    document.getElementById('moreBtn').style.display='none';
+    document.getElementById('emptyState').style.display='none';
+    return;
+  }
+
+  const filtered=base.filter(p=>{
     return(!search||p.sku.toLowerCase().includes(search)||p.descripcion.toLowerCase().includes(search))
       &&(!filtroEst||estadoStock(p.stock)===filtroEst)
       &&(!filtroProv||p.proveedor===filtroProv);
@@ -429,6 +545,9 @@ function render(){
   if(!filtered.length){
     document.getElementById('table').style.display='none';
     document.getElementById('moreBtn').style.display='none';
+    document.getElementById('emptyState').textContent = seccion
+      ? `Sin resultados en ${seccion}. Probá volver a las secciones y buscar en todo el catálogo.`
+      : 'Sin resultados para esa búsqueda.';
     document.getElementById('emptyState').style.display='block';
     return;
   }
@@ -461,6 +580,20 @@ document.getElementById('search').addEventListener('input',filtrar);
 document.getElementById('filterEstado').addEventListener('change',filtrar);
 document.getElementById('filterProv').addEventListener('change',filtrar);
 document.getElementById('moreBtn').addEventListener('click',()=>{ limite += PASO*2; render(); });
+
+document.getElementById('cats').addEventListener('click',e=>{
+  const b = e.target.closest('.cat');
+  if(b) abrirSeccion(b.dataset.cat);
+});
+document.getElementById('backBtn').addEventListener('click',()=>{
+  seccion = null;
+  limite = PASO;
+  document.getElementById('search').value='';
+  document.getElementById('filterEstado').value='';
+  document.getElementById('filterProv').value='';
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
+});
 
 document.getElementById('adminToggle').addEventListener('click',()=>{
   if(isAdmin){
