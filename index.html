@@ -13,15 +13,16 @@
     --mucho:#12833c;--medio:#b07d00;--poco:#e06c00;--no:#98a2b3;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;padding:20px;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;padding:20px;-webkit-text-size-adjust:100%;}
   .wrap{max-width:1100px;margin:0 auto;}
-  header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:3px solid var(--accent);}
-  .brand{display:flex;align-items:center;gap:14px;}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:3px solid var(--accent);}
+  .brand{display:flex;align-items:center;gap:14px;min-width:0;}
+  .brand>div{min-width:0;}
   .brand img{width:46px;height:46px;border-radius:10px;display:block;}
   h1{font-size:20px;letter-spacing:.5px;margin:0;text-transform:uppercase;}
   h1 span{color:var(--accent);}
   .sub{color:var(--muted);font-size:13px;margin-top:2px;}
-  .admin-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:7px;font-size:12px;cursor:pointer;}
+  .admin-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:7px;font-size:12px;cursor:pointer;flex:0 0 auto;}
   .admin-btn:hover{border-color:var(--accent);color:var(--accent);}
 
   .upload-section{display:none;margin-bottom:18px;}
@@ -70,6 +71,9 @@
   .badge.no{background:rgba(152,162,179,.15);color:#6b7280;}
   .badge.no .dot{background:var(--no);}
 
+  .more-btn{display:none;width:100%;margin-top:14px;padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;}
+  .more-btn:hover{border-color:var(--accent);color:var(--accent);}
+
   .loading{text-align:center;color:var(--muted);padding:60px 20px;font-size:14px;}
   .empty{display:none;text-align:center;color:var(--muted);padding:40px;font-size:14px;}
 
@@ -84,10 +88,48 @@
   .modal-actions button.primary:hover{background:var(--accent-dark);}
   .modal-error{color:var(--accent);font-size:12px;margin-bottom:8px;display:none;}
 
-  @media(max-width:600px){
-    .stats{grid-template-columns:repeat(2,1fr);}
-    .stat:first-child{grid-column:1/-1;}
+  /* --- Telefono y tablet chica: la tabla pasa a ser una tarjeta por producto --- */
+  @media(max-width:760px){
+    body{padding:14px 12px;}
+    header{padding-bottom:12px;margin-bottom:16px;}
+    .brand img{width:38px;height:38px;border-radius:8px;}
+    h1{font-size:16px;}
+    .sub{font-size:11px;}
+
     .upload-grid{grid-template-columns:1fr;}
+
+    .stats{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
+    .stat{padding:8px 6px;border-radius:8px;}
+    .stat .n{font-size:17px;}
+    .stat .l{font-size:9px;letter-spacing:.2px;}
+    .stat:first-child{grid-column:1/-1;padding:10px;}
+    .stat:first-child .n{font-size:22px;}
+
+    .controls{gap:8px;}
+    input[type=text]{flex:1 0 100%;font-size:16px;padding:11px 14px;}
+    select{flex:1 1 0;min-width:0;font-size:14px;padding:11px 10px;}
+
+    /* Cada fila de la tabla se muestra como tarjeta */
+    table{display:block;}
+    thead{display:none;}
+    tbody{display:block;}
+    tbody tr{
+      display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+      border:1px solid var(--border);border-radius:10px;
+      padding:12px;margin-bottom:10px;
+    }
+    tbody tr:hover{background:var(--panel2);}
+    tbody td{display:block;border:none;padding:0;}
+    /* Orden dentro de la tarjeta: descripcion, luego SKU + marca + estado, luego precio */
+    tbody td:nth-child(2){order:1;flex:1 0 100%;font-size:14px;font-weight:600;line-height:1.35;}
+    tbody td:nth-child(1){order:2;}
+    tbody td:nth-child(3){order:3;}
+    tbody td:nth-child(5){order:4;margin-left:auto;}
+    tbody td:nth-child(4){order:5;flex:1 0 100%;font-size:17px;color:var(--accent);}
+  }
+
+  @media(max-width:600px){
+    .stat:first-child{grid-column:1/-1;}
   }
 </style>
 </head>
@@ -160,6 +202,8 @@
     <tbody id="tbody"></tbody>
   </table>
 
+  <button class="more-btn" id="moreBtn">Mostrar más</button>
+
   <div class="loading" id="loadingState">Cargando stock...</div>
   <div class="empty" id="emptyState">Sin resultados para ese filtro.</div>
 </div>
@@ -185,6 +229,9 @@ const SUPABASE_KEY = 'sb_publishable_tV7fygkcvybWRoUqZINVYA_MKUmzpDf';
 let data = { gamma:[], lusqtoff:[], omaha:[], kld:[] };
 let lastUpdate = null;
 let isAdmin = false;
+// Cuantos resultados se dibujan de una. Evita colgar el telefono con miles de filas.
+const PASO = 100;
+let limite = PASO;
 
 function estadoStock(s){ return s>20?'mucho':s>=10?'medio':s>=1?'poco':'no'; }
 const estadoLabel = {mucho:'Mucho',medio:'Medio',poco:'Poco',no:'Sin stock'};
@@ -338,6 +385,7 @@ function render(){
     document.getElementById('stats').style.display='none';
     document.getElementById('controls').style.display='none';
     document.getElementById('table').style.display='none';
+    document.getElementById('moreBtn').style.display='none';
     document.getElementById('emptyState').style.display='none';
     document.getElementById('loadingState').style.display='block';
     document.getElementById('loadingState').textContent='Todavía no hay stock cargado.';
@@ -369,12 +417,23 @@ function render(){
 
   if(!filtered.length){
     document.getElementById('table').style.display='none';
+    document.getElementById('moreBtn').style.display='none';
     document.getElementById('emptyState').style.display='block';
     return;
   }
   document.getElementById('emptyState').style.display='none';
   document.getElementById('table').style.display='table';
-  document.getElementById('tbody').innerHTML=filtered.map(p=>{
+
+  const visibles = filtered.slice(0, limite);
+  const moreBtn = document.getElementById('moreBtn');
+  if(filtered.length > limite){
+    moreBtn.style.display='block';
+    moreBtn.textContent=`Mostrar más (${visibles.length} de ${filtered.length})`;
+  }else{
+    moreBtn.style.display='none';
+  }
+
+  document.getElementById('tbody').innerHTML=visibles.map(p=>{
     const est=estadoStock(p.stock);
     return `<tr>
       <td class="sku">${p.sku}</td>
@@ -386,9 +445,11 @@ function render(){
   }).join('');
 }
 
-document.getElementById('search').addEventListener('input',render);
-document.getElementById('filterEstado').addEventListener('change',render);
-document.getElementById('filterProv').addEventListener('change',render);
+function filtrar(){ limite = PASO; render(); }
+document.getElementById('search').addEventListener('input',filtrar);
+document.getElementById('filterEstado').addEventListener('change',filtrar);
+document.getElementById('filterProv').addEventListener('change',filtrar);
+document.getElementById('moreBtn').addEventListener('click',()=>{ limite += PASO*2; render(); });
 
 document.getElementById('adminToggle').addEventListener('click',()=>{
   if(isAdmin){
