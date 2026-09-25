@@ -146,6 +146,52 @@
   .pie .envios{margin-top:12px;font-size:14px;color:var(--muted);font-weight:600;}
   .pie .envios b{color:var(--accent);}
 
+  /* Pedido: boton por producto, barra flotante y panel */
+  .btn-add{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);
+           color:var(--accent);font-size:19px;font-weight:700;line-height:1;cursor:pointer;font-family:inherit;
+           transition:all .15s;padding:0;}
+  .btn-add:hover{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .btn-add.puesto{background:var(--mucho);border-color:var(--mucho);color:#fff;}
+
+  .barra{position:fixed;left:0;right:0;bottom:0;z-index:40;display:none;
+         background:var(--accent);color:#fff;padding:12px 16px;
+         box-shadow:0 -3px 16px rgba(0,0,0,.2);}
+  .barra.on{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .barra .cant{font-size:14px;font-weight:700;}
+  .barra button{background:#fff;color:var(--accent);border:none;padding:10px 18px;border-radius:8px;
+                font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+
+  .panel{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:70;
+         align-items:flex-end;justify-content:center;}
+  .panel.on{display:flex;}
+  .panel .caja{background:var(--bg);width:100%;max-width:560px;max-height:86vh;display:flex;flex-direction:column;
+               border-radius:14px 14px 0 0;overflow:hidden;}
+  .panel .cab{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;
+              background:var(--accent);color:#fff;}
+  .panel .cab h3{margin:0;font-size:15px;text-transform:uppercase;letter-spacing:.5px;}
+  .panel .cab button{background:none;border:none;color:#fff;font-size:24px;cursor:pointer;line-height:1;padding:0 4px;}
+  .panel .lista{overflow-y:auto;padding:8px 16px;flex:1;}
+  .item{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);}
+  .item img{width:44px;height:44px;object-fit:contain;background:#fff;border:1px solid var(--border);border-radius:6px;flex:0 0 auto;}
+  .item .txt{flex:1;min-width:0;}
+  .item .txt .d{font-size:12.5px;font-weight:600;line-height:1.3;}
+  .item .txt .s{font-size:10.5px;color:var(--muted);font-family:monospace;margin-top:2px;}
+  .item .qty{display:flex;align-items:center;gap:7px;flex:0 0 auto;}
+  .item .qty button{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);
+                    background:var(--panel2);color:var(--text);font-size:15px;cursor:pointer;font-family:inherit;padding:0;}
+  .item .qty span{min-width:20px;text-align:center;font-weight:700;font-size:13px;}
+  .panel .pie2{padding:14px 16px 18px;border-top:1px solid var(--border);background:var(--panel);}
+  .panel .pie2 p{margin:0 0 10px 0;font-size:12.5px;color:var(--muted);font-weight:600;}
+  .vends{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .vends button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+                background:var(--panel2);border:1px solid var(--border);border-left:3px solid var(--accent);
+                padding:10px 12px;border-radius:8px;cursor:pointer;font-family:inherit;text-align:left;
+                transition:all .15s;}
+  .vends button:hover{border-color:var(--accent);transform:translateY(-1px);}
+  .vends button b{font-size:13px;color:var(--text);}
+  .vends button i{font-size:11px;color:var(--muted);font-style:normal;}
+  .vacio{text-align:center;color:var(--muted);padding:34px 10px;font-size:13.5px;}
+
   .loading{text-align:center;color:var(--muted);padding:60px 20px;font-size:14px;}
   .empty{display:none;text-align:center;color:var(--muted);padding:40px;font-size:14px;}
 
@@ -216,7 +262,8 @@
     tbody td:nth-child(2){order:2;}
     tbody td:nth-child(4){order:3;}
     tbody td:nth-child(6){order:4;margin-left:auto;}
-    tbody td:nth-child(5){order:5;flex:1 0 100%;font-size:17px;color:var(--accent);}
+    tbody td:nth-child(5){order:5;flex:1 1 auto;font-size:17px;color:var(--accent);}
+    tbody td.td-add{order:6;margin-left:auto;}
   }
 
   @media(max-width:600px){
@@ -312,7 +359,7 @@
   </div>
 
   <table id="table">
-    <thead><tr><th id="thFoto">Foto</th><th>SKU</th><th>Descripción</th><th>Marca</th><th>Precio Lista</th><th>Estado</th></tr></thead>
+    <thead><tr><th id="thFoto">Foto</th><th>SKU</th><th>Descripción</th><th>Marca</th><th>Precio Lista</th><th>Estado</th><th></th></tr></thead>
     <tbody id="tbody"></tbody>
   </table>
 
@@ -334,6 +381,25 @@
     <div class="envios">Envíos a <b>todo el país</b></div>
     <button class="admin-btn" id="adminToggle">Admin</button>
   </footer>
+</div>
+
+<div class="barra" id="barra">
+  <span class="cant" id="barraCant"></span>
+  <button id="verPedido">Ver pedido</button>
+</div>
+
+<div class="panel" id="panel">
+  <div class="caja">
+    <div class="cab">
+      <h3>Mi pedido</h3>
+      <button id="cerrarPanel" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="lista" id="listaPedido"></div>
+    <div class="pie2" id="pie2">
+      <p>Elegí con quién querés hacer el pedido:</p>
+      <div class="vends" id="vends"></div>
+    </div>
+  </div>
 </div>
 
 <div class="viewer" id="viewer">
@@ -430,6 +496,19 @@ const COLORES = {
 };
 
 const OTROS = 'Otros';
+
+// Vendedores que reciben los pedidos por WhatsApp (formato internacional, sin signos)
+const VENDEDORES = [
+  {nombre:'Paz',    tel:'5491150147585'},
+  {nombre:'Daniel', tel:'5491123568049'},
+  {nombre:'Magali', tel:'5491171232452'},
+  {nombre:'Ariel',  tel:'5491161963834'},
+];
+
+// El pedido se guarda en el teléfono del cliente: { sku: cantidad }
+let pedido = {};
+try{ pedido = JSON.parse(localStorage.getItem('pedidoServitec')||'{}'); }catch(e){ pedido={}; }
+function guardarPedido(){ try{ localStorage.setItem('pedidoServitec',JSON.stringify(pedido)); }catch(e){} }
 
 // Subsecciones dentro de una seccion. Gana la primera que coincide.
 const SUBSECCIONES = {
@@ -810,6 +889,8 @@ function render(){
       <td><span class="marca">${marcaLabel[p.proveedor]||p.proveedor}</span></td>
       <td class="precio">$${p.precio.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
       <td><span class="badge ${est}"><span class="dot"></span>${estadoLabel[est]}</span></td>
+      <td class="td-add"><button class="btn-add ${pedido[p.sku]?'puesto':''}" data-sku="${p.sku}"
+          title="Agregar al pedido">${pedido[p.sku]?'✓':'+'}</button></td>
     </tr>`;
   }).join('');
 }
@@ -909,6 +990,81 @@ function checkPw(){
   }
 }
 
+// ---- Pedido -----------------------------------------------------------
+function totalItems(){ return Object.values(pedido).reduce((a,b)=>a+b,0); }
+
+function pintarBarra(){
+  const n=totalItems(), barra=document.getElementById('barra');
+  barra.classList.toggle('on', n>0);
+  document.getElementById('barraCant').textContent =
+    n===1 ? '1 producto en el pedido' : `${n} productos en el pedido`;
+  document.body.style.paddingBottom = n>0 ? '64px' : '';
+}
+
+function pintarPedido(){
+  const cont=document.getElementById('listaPedido');
+  const todos=getAllProductos();
+  const skus=Object.keys(pedido);
+  document.getElementById('pie2').style.display = skus.length?'block':'none';
+  if(!skus.length){ cont.innerHTML='<div class="vacio">Todavía no agregaste productos.<br>Tocá el <b>+</b> en cualquier producto.</div>'; return; }
+  cont.innerHTML=skus.map(sk=>{
+    const p=todos.find(x=>x.sku===sk); if(!p) return '';
+    const f=fotoDe(p);
+    return `<div class="item">
+      ${f?`<img src="${f}" alt="">`:''}
+      <div class="txt"><div class="d">${p.descripcion.split('|')[0].trim()}</div><div class="s">${p.sku}</div></div>
+      <div class="qty">
+        <button data-menos="${p.sku}">−</button>
+        <span>${pedido[sk]}</span>
+        <button data-mas="${p.sku}">+</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function pintarVendedores(){
+  document.getElementById('vends').innerHTML = VENDEDORES.map((v,i)=>
+    `<button data-vend="${i}"><b>${v.nombre}</b><i>Enviar pedido</i></button>`).join('');
+}
+
+function textoPedido(){
+  const todos=getAllProductos();
+  const lineas=Object.entries(pedido).map(([sk,q])=>{
+    const p=todos.find(x=>x.sku===sk);
+    return p ? `• ${q} x ${p.descripcion.split('|')[0].trim()} (${p.sku})` : '';
+  }).filter(Boolean);
+  return `Hola! Quiero hacer este pedido:\n\n${lineas.join('\n')}\n\nTotal: ${totalItems()} producto(s).`;
+}
+
+function actualizarPedido(){ pintarBarra(); pintarPedido(); if(typeof render==='function') render(); }
+
+document.getElementById('tbody').addEventListener('click',e=>{
+  const b=e.target.closest('.btn-add');
+  if(!b) return;
+  const sk=b.dataset.sku;
+  if(pedido[sk]) delete pedido[sk]; else pedido[sk]=1;
+  guardarPedido(); actualizarPedido();
+});
+document.getElementById('verPedido').addEventListener('click',()=>{
+  pintarPedido(); document.getElementById('panel').classList.add('on');
+});
+document.getElementById('cerrarPanel').addEventListener('click',()=>document.getElementById('panel').classList.remove('on'));
+document.getElementById('panel').addEventListener('click',e=>{ if(e.target.id==='panel') e.currentTarget.classList.remove('on'); });
+document.getElementById('listaPedido').addEventListener('click',e=>{
+  const mas=e.target.closest('[data-mas]'), menos=e.target.closest('[data-menos]');
+  if(mas){ pedido[mas.dataset.mas]=(pedido[mas.dataset.mas]||0)+1; }
+  else if(menos){ const sk=menos.dataset.menos; pedido[sk]=(pedido[sk]||1)-1; if(pedido[sk]<1) delete pedido[sk]; }
+  else return;
+  guardarPedido(); actualizarPedido();
+});
+document.getElementById('vends').addEventListener('click',e=>{
+  const b=e.target.closest('[data-vend]');
+  if(!b || !totalItems()) return;
+  const v=VENDEDORES[+b.dataset.vend];
+  try{ localStorage.setItem('vendedorServitec', v.nombre); }catch(err){}
+  window.open(`https://wa.me/${v.tel}?text=${encodeURIComponent(textoPedido())}`,'_blank');
+});
+
 // Carrusel de la portada: los carteles van rotando solos
 (function(){
   const hero=document.getElementById('hero');
@@ -939,6 +1095,8 @@ function checkPw(){
 // Cargar las 4 marcas al arrancar
 Promise.all([loadBin('gamma'),loadBin('lusqtoff'),loadBin('omaha'),loadBin('kld'),cargarFotos()]).then(()=>{
   document.getElementById('loadingState').style.display='none';
+  pintarVendedores();
+  pintarBarra();
   render();
 });
 </script>
