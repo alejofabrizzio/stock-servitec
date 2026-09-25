@@ -69,6 +69,34 @@ def bajar(url):
     req = urllib.request.Request(url, headers={'User-Agent': UA})
     return urllib.request.urlopen(req, timeout=120).read()
 
+RX_DRIVE = re.compile(
+    r'aria-label="([^"]+?)\s+(?:Archivo|File|Carpeta)[^"]*"[^>]{0,250}?ssk=\'[^\']*?:([A-Za-z0-9_-]{20,45})', re.I)
+
+def listar_carpeta(folder_id):
+    """Devuelve {nombre_de_archivo: id} de una carpeta publica de Drive."""
+    url = f'https://drive.google.com/drive/folders/{folder_id}'
+    html = urllib.request.urlopen(
+        urllib.request.Request(url, headers={'User-Agent': UA}), timeout=90).read().decode('utf-8', 'ignore')
+    out = {}
+    for nombre, fid in RX_DRIVE.findall(html):
+        out.setdefault(nombre.strip(), re.sub(r'-\d+-\d+$', '', fid))
+    return out
+
+def fuentes_de_carpeta(folder_id, proveedores):
+    """Asocia cada proveedor con el archivo de la carpeta cuyo nombre lo menciona."""
+    archivos = listar_carpeta(folder_id)
+    fuentes = {}
+    for prov in proveedores:
+        for nombre, fid in archivos.items():
+            n = nombre.lower()
+            if prov in n and n.endswith(('.xls', '.xlsx')):
+                fuentes[prov] = f'https://drive.google.com/uc?export=download&id={fid}'
+                break
+    faltan = [p for p in proveedores if p not in fuentes]
+    if faltan:
+        print(f'  Aviso: no encontré archivo para {", ".join(faltan)} en la carpeta.')
+    return fuentes
+
 def subir(proveedor, productos):
     ts = datetime.now(timezone.utc).isoformat()
     h = {'apikey': SUPABASE_KEY, 'Authorization': f'Bearer {SUPABASE_KEY}',
@@ -85,10 +113,17 @@ def subir(proveedor, productos):
         req = urllib.request.Request(f'{SUPABASE_URL}/rest/v1/productos', data=cuerpo, headers=h, method='POST')
     urllib.request.urlopen(req, timeout=120)
 
+PROVEEDORES = ['gamma', 'lusqtoff', 'omaha', 'kld']
+
 def main():
-    fuentes = json.loads(os.environ.get('FUENTES', '{}'))
+    carpeta = os.environ.get('DRIVE_CARPETA', '').strip()
+    if carpeta:
+        m = re.search(r'/folders/([A-Za-z0-9_-]{20,})', carpeta)
+        fuentes = fuentes_de_carpeta(m.group(1) if m else carpeta, PROVEEDORES)
+    else:
+        fuentes = json.loads(os.environ.get('FUENTES', '{}'))
     if not fuentes:
-        print('No hay fuentes configuradas (variable FUENTES).'); return 1
+        print('No hay de dónde leer: configurá DRIVE_CARPETA o FUENTES.'); return 1
     if not SUPABASE_KEY:
         print('Falta SUPABASE_KEY.'); return 1
     fallos = 0
