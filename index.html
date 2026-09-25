@@ -171,15 +171,41 @@
   .panel .cab h3{margin:0;font-size:15px;text-transform:uppercase;letter-spacing:.5px;}
   .panel .cab button{background:none;border:none;color:#fff;font-size:24px;cursor:pointer;line-height:1;padding:0 4px;}
   .panel .lista{overflow-y:auto;padding:8px 16px;flex:1;}
-  .item{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);}
+  .item{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);
+        transition:opacity .22s ease,transform .22s ease;}
+  .item.sale{opacity:0;transform:translateX(28px);}
   .item img{width:44px;height:44px;object-fit:contain;background:#fff;border:1px solid var(--border);border-radius:6px;flex:0 0 auto;}
+  /* hueco del mismo tamaño para que las filas sin foto no queden corridas */
+  .item .nofoto{width:44px;height:44px;border:1px dashed var(--border);border-radius:6px;flex:0 0 auto;
+                display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:16px;}
   .item .txt{flex:1;min-width:0;}
   .item .txt .d{font-size:12.5px;font-weight:600;line-height:1.3;}
   .item .txt .s{font-size:10.5px;color:var(--muted);font-family:monospace;margin-top:2px;}
-  .item .qty{display:flex;align-items:center;gap:7px;flex:0 0 auto;}
+  .item .txt .pu{font-size:11px;color:var(--muted);margin-top:3px;}
+  .item .txt .sinst{display:inline-block;margin-top:4px;font-size:10px;font-weight:700;letter-spacing:.3px;
+                    text-transform:uppercase;color:var(--accent);background:rgba(220,38,38,.1);
+                    border-radius:20px;padding:2px 8px;}
+  .item .der{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:0 0 auto;}
+  .item .qty{display:flex;align-items:center;gap:7px;}
   .item .qty button{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);
-                    background:var(--panel2);color:var(--text);font-size:15px;cursor:pointer;font-family:inherit;padding:0;}
-  .item .qty span{min-width:20px;text-align:center;font-weight:700;font-size:13px;}
+                    background:var(--panel2);color:var(--text);font-size:15px;cursor:pointer;font-family:inherit;padding:0;
+                    transition:background .15s,border-color .15s;}
+  .item .qty button:hover{border-color:var(--accent);color:var(--accent);}
+  .item .qty span{min-width:20px;text-align:center;font-weight:700;font-size:13px;display:inline-block;}
+  .item .sub{font-size:13px;font-weight:700;white-space:nowrap;}
+  .item .del{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit;
+             padding:0;text-decoration:underline;}
+  .item .del:hover{color:var(--accent);}
+
+  @keyframes pulso{0%{transform:scale(1)}40%{transform:scale(1.16)}100%{transform:scale(1)}}
+  .pulso{animation:pulso .32s ease;}
+  @keyframes subir{from{transform:translateY(100%)}to{transform:none}}
+  .panel.on .caja{animation:subir .26s cubic-bezier(.22,1,.36,1);}
+
+  .totalRow{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px;}
+  .totalRow .lbl{font-size:12.5px;color:var(--muted);font-weight:600;}
+  .totalRow .val{font-size:19px;font-weight:800;color:var(--accent);}
+  .avisoStock{font-size:11.5px;color:var(--muted);margin:-4px 0 12px;line-height:1.4;}
   .panel .pie2{padding:14px 16px 18px;border-top:1px solid var(--border);background:var(--panel);}
   .panel .pie2 p{margin:0 0 10px 0;font-size:12.5px;color:var(--muted);font-weight:600;}
   .vends{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -396,6 +422,7 @@
     </div>
     <div class="lista" id="listaPedido"></div>
     <div class="pie2" id="pie2">
+      <div id="totalPedido"></div>
       <p>Elegí con quién querés hacer el pedido:</p>
       <div class="vends" id="vends"></div>
     </div>
@@ -719,6 +746,7 @@ document.querySelectorAll('.upload-section input[type=file]').forEach(input=>{
         statusEl.textContent=`Guardando ${productos.length} productos...`;
         await saveBin(prov, productos);
         data[prov] = productos;
+        _porSku = null;
         statusEl.className='upload-status ok';
         statusEl.textContent=`✓ ${productos.length} productos guardados`;
         boxEl.classList.add('loaded');
@@ -992,34 +1020,87 @@ function checkPw(){
 
 // ---- Pedido -----------------------------------------------------------
 function totalItems(){ return Object.values(pedido).reduce((a,b)=>a+b,0); }
+function fmtPrecio(n){ return '$'+(n||0).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+// indice por SKU: el pedido lo consulta en cada toque y recorrer 2000 productos por linea se nota
+let _porSku=null;
+function prodDe(sku){
+  if(!_porSku){ _porSku={}; getAllProductos().forEach(p=>_porSku[p.sku]=p); }
+  return _porSku[sku];
+}
+function totalPedido(){
+  return Object.entries(pedido).reduce((a,[sk,q])=>{ const p=prodDe(sk); return a + (p?p.precio*q:0); },0);
+}
 
 function pintarBarra(){
   const n=totalItems(), barra=document.getElementById('barra');
   barra.classList.toggle('on', n>0);
-  document.getElementById('barraCant').textContent =
-    n===1 ? '1 producto en el pedido' : `${n} productos en el pedido`;
+  const txt = (n===1 ? '1 producto' : `${n} productos`) + ' · ' + fmtPrecio(totalPedido());
+  const el=document.getElementById('barraCant');
+  if(el.textContent && el.textContent!==txt){ el.classList.remove('pulso'); void el.offsetWidth; el.classList.add('pulso'); }
+  el.textContent = txt;
   document.body.style.paddingBottom = n>0 ? '64px' : '';
+}
+
+function lineaPedido(p){
+  const q=pedido[p.sku], f=fotoDe(p);
+  return `<div class="item" data-linea="${p.sku}">
+      ${f?`<img src="${f}" alt="">`:'<div class="nofoto">·</div>'}
+      <div class="txt">
+        <div class="d">${p.descripcion.split('|')[0].trim()}</div>
+        <div class="s">${p.sku}</div>
+        <div class="pu">${fmtPrecio(p.precio)} c/u</div>
+        ${p.stock>0?'':'<div class="sinst">Sin stock · se pide</div>'}
+      </div>
+      <div class="der">
+        <div class="qty">
+          <button data-menos="${p.sku}" aria-label="Quitar uno">−</button>
+          <span data-cant="${p.sku}">${q}</span>
+          <button data-mas="${p.sku}" aria-label="Agregar uno">+</button>
+        </div>
+        <div class="sub" data-sub="${p.sku}">${fmtPrecio(p.precio*q)}</div>
+        <button class="del" data-quitar="${p.sku}">Quitar</button>
+      </div>
+    </div>`;
 }
 
 function pintarPedido(){
   const cont=document.getElementById('listaPedido');
-  const todos=getAllProductos();
   const skus=Object.keys(pedido);
   document.getElementById('pie2').style.display = skus.length?'block':'none';
   if(!skus.length){ cont.innerHTML='<div class="vacio">Todavía no agregaste productos.<br>Tocá el <b>+</b> en cualquier producto.</div>'; return; }
-  cont.innerHTML=skus.map(sk=>{
-    const p=todos.find(x=>x.sku===sk); if(!p) return '';
-    const f=fotoDe(p);
-    return `<div class="item">
-      ${f?`<img src="${f}" alt="">`:''}
-      <div class="txt"><div class="d">${p.descripcion.split('|')[0].trim()}</div><div class="s">${p.sku}</div></div>
-      <div class="qty">
-        <button data-menos="${p.sku}">−</button>
-        <span>${pedido[sk]}</span>
-        <button data-mas="${p.sku}">+</button>
-      </div>
-    </div>`;
-  }).join('');
+  cont.innerHTML=skus.map(sk=>{ const p=prodDe(sk); return p?lineaPedido(p):''; }).join('');
+  pintarTotal();
+}
+
+function pintarTotal(){
+  const cont=document.getElementById('totalPedido'); if(!cont) return;
+  const sinStock=Object.keys(pedido).filter(sk=>{ const p=prodDe(sk); return p && p.stock<=0; }).length;
+  cont.innerHTML = `<div class="totalRow"><span class="lbl">Total del pedido</span>
+      <span class="val">${fmtPrecio(totalPedido())}</span></div>` +
+    (sinStock ? `<div class="avisoStock">${sinStock===1?'1 producto':`${sinStock} productos`} sin stock: se piden al proveedor y te confirmamos la entrega.</div>` : '');
+}
+
+// actualiza solo la linea tocada, sin volver a dibujar todo el pedido
+function refrescarLinea(sku){
+  const p=prodDe(sku), q=pedido[sku];
+  const cant=document.querySelector(`[data-cant="${CSS.escape(sku)}"]`);
+  const sub=document.querySelector(`[data-sub="${CSS.escape(sku)}"]`);
+  if(cant){ cant.textContent=q; cant.classList.remove('pulso'); void cant.offsetWidth; cant.classList.add('pulso'); }
+  if(sub && p) sub.textContent=fmtPrecio(p.precio*q);
+  pintarTotal(); pintarBarra(); sincronizarBotones();
+}
+
+function quitarLinea(sku){
+  const fila=document.querySelector(`[data-linea="${CSS.escape(sku)}"]`);
+  delete pedido[sku]; guardarPedido();
+  if(!fila){ actualizarPedido(); return; }
+  fila.classList.add('sale');
+  setTimeout(()=>{
+    if(!Object.keys(pedido).length){ pintarPedido(); }
+    else fila.remove();
+    pintarTotal(); pintarBarra(); sincronizarBotones();
+  },220);
 }
 
 function pintarVendedores(){
@@ -1028,12 +1109,14 @@ function pintarVendedores(){
 }
 
 function textoPedido(){
-  const todos=getAllProductos();
   const lineas=Object.entries(pedido).map(([sk,q])=>{
-    const p=todos.find(x=>x.sku===sk);
-    return p ? `• ${q} x ${p.descripcion.split('|')[0].trim()} (${p.sku})` : '';
+    const p=prodDe(sk); if(!p) return '';
+    const marca=p.stock>0 ? '' : ' [sin stock]';
+    return `• ${q} x ${p.descripcion.split('|')[0].trim()} (${p.sku})${marca} — ${fmtPrecio(p.precio*q)}`;
   }).filter(Boolean);
-  return `Hola! Quiero hacer este pedido:\n\n${lineas.join('\n')}\n\nTotal: ${totalItems()} producto(s).`;
+  return `Hola! Quiero hacer este pedido:\n\n${lineas.join('\n')}\n\n`+
+         `${totalItems()} producto(s) — Total: ${fmtPrecio(totalPedido())}\n`+
+         `(precios de lista, a confirmar)`;
 }
 
 function actualizarPedido(){ pintarBarra(); pintarPedido(); sincronizarBotones(); }
@@ -1060,11 +1143,18 @@ document.getElementById('verPedido').addEventListener('click',()=>{
 document.getElementById('cerrarPanel').addEventListener('click',()=>document.getElementById('panel').classList.remove('on'));
 document.getElementById('panel').addEventListener('click',e=>{ if(e.target.id==='panel') e.currentTarget.classList.remove('on'); });
 document.getElementById('listaPedido').addEventListener('click',e=>{
-  const mas=e.target.closest('[data-mas]'), menos=e.target.closest('[data-menos]');
-  if(mas){ pedido[mas.dataset.mas]=(pedido[mas.dataset.mas]||0)+1; }
-  else if(menos){ const sk=menos.dataset.menos; pedido[sk]=(pedido[sk]||1)-1; if(pedido[sk]<1) delete pedido[sk]; }
-  else return;
-  guardarPedido(); actualizarPedido();
+  const mas=e.target.closest('[data-mas]'), menos=e.target.closest('[data-menos]'),
+        quitar=e.target.closest('[data-quitar]');
+  if(quitar){ quitarLinea(quitar.dataset.quitar); return; }
+  if(mas){
+    const sk=mas.dataset.mas;
+    pedido[sk]=Math.min((pedido[sk]||0)+1, 999);
+    guardarPedido(); refrescarLinea(sk);
+  }else if(menos){
+    const sk=menos.dataset.menos;
+    if((pedido[sk]||1)<=1){ quitarLinea(sk); return; }
+    pedido[sk]--; guardarPedido(); refrescarLinea(sk);
+  }
 });
 document.getElementById('vends').addEventListener('click',e=>{
   const b=e.target.closest('[data-vend]');
