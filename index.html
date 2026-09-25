@@ -1036,7 +1036,16 @@ function textoPedido(){
   return `Hola! Quiero hacer este pedido:\n\n${lineas.join('\n')}\n\nTotal: ${totalItems()} producto(s).`;
 }
 
-function actualizarPedido(){ pintarBarra(); pintarPedido(); if(typeof render==='function') render(); }
+function actualizarPedido(){ pintarBarra(); pintarPedido(); sincronizarBotones(); }
+
+// deja cada boton "+" / "✓" acorde al pedido, sin volver a dibujar la lista
+function sincronizarBotones(){
+  document.querySelectorAll('.btn-add').forEach(b=>{
+    const puesto = !!pedido[b.dataset.sku];
+    b.classList.toggle('puesto', puesto);
+    b.textContent = puesto ? '✓' : '+';
+  });
+}
 
 document.getElementById('tbody').addEventListener('click',e=>{
   const b=e.target.closest('.btn-add');
