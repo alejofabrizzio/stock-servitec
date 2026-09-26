@@ -138,6 +138,21 @@
   /* Pie: logo, Instagram y envios */
   .pie{margin-top:34px;padding:26px 16px 20px;border-top:3px solid var(--accent);text-align:center;}
   .pie img{width:180px;max-width:60%;height:auto;display:block;margin:0 auto 14px;}
+
+  /* Banner de marcas: corre solo hacia la derecha */
+  .marcas{position:relative;overflow:hidden;margin:18px 0 20px;padding:11px 0;
+          border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+  .marcas::before,.marcas::after{content:'';position:absolute;top:0;bottom:0;width:60px;z-index:2;pointer-events:none;}
+  .marcas::before{left:0;background:linear-gradient(90deg,var(--bg) 20%,transparent);}
+  .marcas::after{right:0;background:linear-gradient(270deg,var(--bg) 20%,transparent);}
+  .marcas .tira{display:flex;align-items:center;width:max-content;animation:correr 30s linear infinite;}
+  /* de -50% a 0 = se desplaza hacia la derecha; la lista va duplicada para que el salto no se vea */
+  @keyframes correr{from{transform:translateX(-50%);}to{transform:translateX(0);}}
+  .marcas b{font-size:14px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;
+            color:var(--muted);padding:0 24px;white-space:nowrap;}
+  .marcas i{width:5px;height:5px;border-radius:50%;background:var(--accent);flex:0 0 auto;opacity:.7;}
+  .marcas:hover .tira{animation-play-state:paused;}
+  @media(prefers-reduced-motion:reduce){.marcas .tira{animation:none;}}
   .pie a{display:inline-flex;align-items:center;gap:8px;color:var(--text);text-decoration:none;
          font-size:15px;font-weight:700;padding:9px 16px;border:1px solid var(--border);border-radius:999px;
          transition:border-color .15s,color .15s;}
@@ -311,7 +326,9 @@
 
   <div class="hero" id="hero">
     <img src="hero1.jpg" class="on" alt="Servitec" onerror="this.remove()">
+    <img src="hero4.jpg" alt="Baterías Iron Volt Black Series" loading="lazy" onerror="this.remove()">
     <img src="hero2.jpg" alt="" loading="lazy" onerror="this.remove()">
+    <img src="hero5.jpg" alt="Aspiradora inalámbrica VPBAT-22" loading="lazy" onerror="this.remove()">
     <img src="hero3.jpg" alt="" loading="lazy" onerror="this.remove()">
     <div class="puntos" id="heroPuntos"></div>
   </div>
@@ -396,6 +413,11 @@
 
   <footer class="pie">
     <img src="logo-full.jpg" alt="Servitec MG SRL · Distribuidor" onerror="this.remove()">
+
+    <div class="marcas" aria-label="Marcas que distribuimos">
+      <div class="tira" id="tiraMarcas"></div>
+    </div>
+
     <a href="https://instagram.com/servitec_mg" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <rect x="2" y="2" width="20" height="20" rx="5"></rect>
@@ -1163,6 +1185,15 @@ document.getElementById('vends').addEventListener('click',e=>{
   try{ localStorage.setItem('vendedorServitec', v.nombre); }catch(err){}
   window.open(`https://wa.me/${v.tel}?text=${encodeURIComponent(textoPedido())}`,'_blank');
 });
+
+// Banner de marcas: la lista va duplicada para que el ciclo no tenga corte
+(function(){
+  const tira=document.getElementById('tiraMarcas');
+  if(!tira) return;
+  const MARCAS=['Lusqtoff','Omaha','Gamma','KLD','Emtop','Wadfow'];
+  const una=MARCAS.map(m=>`<b>${m}</b><i></i>`).join('');
+  tira.innerHTML=una+una;
+})();
 
 // Carrusel de la portada: los carteles van rotando solos
 (function(){
