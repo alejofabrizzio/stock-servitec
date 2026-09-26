@@ -486,25 +486,37 @@ let seccion = null;
 // La categoria se deduce de la descripcion, porque los Excel no la traen.
 // Gana la primera regla que coincide, asi que el orden importa.
 const CATEGORIAS = [
-  ['Taller y máquinas de banco', /llave de impacto|llave impacto|#[^#]*\bshk-?\d|gabinete|kit de herramientas (neumatica|\d+ ?p)|juego de herramientas neumatica|set de herramientas \d+ ?p/],
+  // Primera de todas: un combo trae varias herramientas y si no se atrapa aca
+  // lo termina clasificando la primera que aparezca en la descripcion.
+  ['Combos', /^(\(oferta\)\s*)?combo\b|pack constructor|pack hogar|herramientas a bateria - pack/],
+  ['Taller y máquinas de banco', /llave de impacto|llave impacto|llave de imp\b|#[^#]*\bshk-?\d|gabinete|kit de herramientas neumatica|juego de herramientas neumatica/],
   ['Termofusoras', /termofusora|termofusion/],
   ['Cortadoras sensitivas', /sensitiva|tronzadora/],
   ['Pistolas de calor', /pistola de calor|pistola calor|decapador/],
-  ['Porta herramientas', /^(\(oferta\)\s*)?(caja|cajon|bolso|mochila|valija|carro|banco|estante|organizador|porta)[a-z ]{0,14}(de |para |porta)?herramienta|^(\(oferta\)\s*)?(caja|cajon|bolso) (de |para )?herramienta/],
+  ['Porta herramientas', /^(\(oferta\)\s*)?(caja|cajon|bolso|mochila|valija|carro|banco|estante|organizador|porta)[a-z\/ ]{0,14}(de |para |porta)?herramienta|^(\(oferta\)\s*)?(caja|cajon|bolso) (de |para )?herramienta/],
   ['Taller y máquinas de banco', /cargador ?[-\/ ]? ?arrancador|arrancador|cargador (de )?bat|cargador mantenedor|cargador\/arrancador|booster/],
+  // Antes de Outdoor, que se lleva cualquier "botella": el criquet botella es un gato.
+  ['Taller y máquinas de banco', /crique[a-z]* botella/],
   ['Outdoor y camping', /botella|vaso termico|taza termica|termo\b|matera|\bmate\b|pava|conservadora|carpa|bolsa de dormir|camping|cantimplora|silla plegable|reposera|mochila/],
-  ['Construcción', /rotomartillo|demoledor|martillo (demoledor|electroneumatico|perforador|rotativo)|cortadora de ceramica|cortaceramica|cortadora de porcelanato|ventosa|vibronivelador|vibrador de hormigon|vibradora|motovibrador|hormigonera|mezcladora de hormigon|placa compactadora|compactador|alisador|revocadora|acanaladora|llana/],
-  ['Accesorios y consumibles', /tanza|cincel|clip de nivelacion|cunas? de nivelacion|separadores? de baldosa|bateria .*(litio|li-?ion|ah\b)|bateria \d|jgo \d bateria|juego \d bateria|cargador p\/ ?bateria|cargador de bateria para herramienta/],
-  ['Jardín y exterior', /cortadora de (cesped|pasto)|cortacesped|corta ?cesped|sopladora|soplador|desmalezadora|motosierra|bordeadora|cortacerco|corta cerco|fumigad|pulverizadora|motoguadana|podador|podar|pala\b|azada|rastrillo|carretilla|riego|motocultivador|motoazada|astilladora|chipeadora|espada|guadana|jardin/],
-  ['Taladros y atornilladores', /taladro|percutor|atornillador|destornillador electrico|llave de impacto|mezclador|revolvedora|agujereadora/],
+  ['Construcción', /rotomartillo|demoledor|martillo (demoledor|electroneumatico|perforador|rotativo)|cortadora de ceramica|cortaceramica|cortadora de porcelanato|ventosa|vibronivelador|vibrador de hormigon|vibradora|motovibrador|hormigonera|mezcladora de hormigon|mezclador|revolvedora|placa compactadora|compactador|alisador|revocadora|acanaladora|llana/],
+  // Solo cuando la bateria ES el producto: si no, "taladro a bateria" terminaba aca en vez de en Taladros.
+  ['Accesorios y consumibles', /tanza|cincel|clip de nivelacion|cunas? de nivelacion|separadores? de baldosa|^(\(oferta\)\s*)?bateria\b(?! de cocina)|^(\(oferta\)\s*)?(jgo|juego) \d+ bateria|jgo \d bateria|juego \d bateria|^(\(oferta\)\s*)?cargador ?[+y] ?bateria|cargador p\/ ?bateria|cargador de bateria para herramienta/],
+  ['Jardín y exterior', /cortadora de (cesped|pasto)|cortacesped|corta ?cesped|sopladora|soplador|desmalezadora|motosierra|bordeadora|cortacerco|corta cerco|fumigad|pulverizador|aspersor|regador|ionizador|motoguadana|podador|podar|pala\b|azada|rastrillo|carretilla|riego|motocultivador|motoazada|astilladora|chipeadora|espada|guadana|jardin/],
+  ['Taladros y atornilladores', /taladro|percutor|atornillador|destornillador electrico|llave de impacto|agujereadora/],
+  // Antes que Amoladoras: "cortadora de plasma" es soldadura, no amoladora.
+  ['Soldadura', /plasma/],
   ['Amoladoras y cortadoras', /amoladora|cortahierro|cortadora|multi.?cortadora|multi.?herramienta|amoladoras/],
-  ['Sierras y carpintería', /sierra|caladora|inglet|cepillad|cepillo (electrico|rebajador)|garlopa|router|fresadora|combinada \d|biseladora|torno para madera|lijadora de banda/],
+  // Antes que Taller, que se queda con "prensa" a secas: el sargento es de carpinteria.
+  ['Sierras y carpintería', /sierra|caladora|inglet|cepillad|cepillo (electrico|rebajador)|garlopa|router|fresadora|combinada \d|biseladora|torno para madera|lijadora de banda|sargento|prensa tipo f/],
   ['Lijadoras y pulidoras', /lijadora|pulidora|orbital|abrillantadora/],
   ['Soldadura', /soldador|soldadura|soldar|inverter|electrodo|masc ?p\/ ?sold|careta|\bmig\b|\btig\b|\bmma\b|estanar|oxicorte|antorcha|plasma/],
-  ['Compresores y pintura', /compresor|neumatic|pistola|aerografo|soplete|p\/ ?pintar|para pintar|airless|arenadora|acople rapido|manguera de aire|inflador|regulador de presion/],
+  // Antes de compresores: el equipo o la pistola de pintar van a Pintura, pero un
+  // compresor que incluye pistola en el kit sigue siendo compresor (por eso el ^).
+  ['Pintura', /^(\(oferta\)\s*)?(equipo [a-z\/ ]{0,16}pintar|pistola [a-z\/\. ]{0,16}pintar|pist\.? de pintar|aerografo|latex|acrilico [a-z ]{0,12}pileta)/],
+  ['Compresores y neumática', /compresor|neumatic|pistola|aerografo|soplete|p\/ ?pintar|para pintar|airless|arenadora|acople rapido|manguera de aire|inflador|regulador de presion/],
   ['Hidrolavadoras y aspiradoras', /hidrolav|aspirador|karcher|barredora|lustradora|limpiavidrio|limpiador|a vapor|alta presion/],
   ['Bombas de agua', /bomba|electrobomba|presurizador|termotanque|calefon|tanque de agua|flotante/],
-  ['Generadores y energía', /generador|grupo electr|\bmotor\b|motobomba|motocompresor|bateria|\bups\b|estabilizador|inversor|panel solar/],
+  ['Generadores y energía', /generador|grupo electr|\bmotor\b|motobomba|motocompresor|\bups\b|estabilizador|inversor|panel solar/],
   ['Taller y máquinas de banco', /morsa|prensa|\btorno\b|esmeril|banco de trabajo|de banco|aparejo|crique|gato hidraulic|gato de|\bcarro\b|guinche|malacate|tecle|camilla para mecanico|rampa para moto|plataforma de carga|expansor hidraulic|dobladora|cizalla|apilador|bandeja para pieza|zorra|transpaleta|mesa de trabajo|torqui/],
   ['Herramientas manuales', /llave|vaso\b|alicate|pinza|martillo|maza|destornillador|atornillador|formon|serrucho|lima\b|punzon|remachadora|arco de sierra|tenaza|cutter|trincheta|engrampadora|grampa|clavo|tornillo|bulon|juego de|jgo|\bset\b|\bkit\b|combo|espatula|balde|pincel|rodillo|hacha|machete|barreta|extractor|terraja|macho de roscar|cortacano|tijera|regla\b/],
   ['Medición y nivelación', /nivel|escuadra|\bmetro\b|cinta metrica|calibre|distanciometro|laser|plomada|balanza|termometro|multimetro|tester|amperometrica|detector|manometro/],
@@ -517,6 +529,8 @@ const CATEGORIAS = [
 
 // Un color por seccion, para que los recuadros se distingan entre si
 const COLORES = {
+  'Combos':'#e30713',
+  'Pintura':'#8b3fa8',
   'Termofusoras':'#0e7fb3',
   'Cortadoras sensitivas':'#b3255f',
   'Pistolas de calor':'#d2600a',
@@ -530,7 +544,7 @@ const COLORES = {
   'Sierras y carpintería':'#6b3fa0',
   'Lijadoras y pulidoras':'#a5820a',
   'Soldadura':'#1f2937',
-  'Compresores y pintura':'#7d2b8f',
+  'Compresores y neumática':'#7d2b8f',
   'Hidrolavadoras y aspiradoras':'#0b7ea8',
   'Bombas de agua':'#1256a0',
   'Generadores y energía':'#0f7b7b',
@@ -562,7 +576,9 @@ function guardarPedido(){ try{ localStorage.setItem('pedidoServitec',JSON.string
 // Subsecciones dentro de una seccion. Gana la primera que coincide.
 const SUBSECCIONES = {
   'Taller y máquinas de banco': [
-    ['Llaves de impacto', /llave de impacto|llave impacto/],
+    ['Llaves de impacto', /llave de impacto|llave impacto|llave crique/],
+    // Despues de las llaves crique y antes de Muebles, que se lleva los "crique carrito".
+    ['Criques', /crique|gato hidraulic|gato de/],
     ['Cargadores y arrancadores', /cargador|arrancador|booster/],
     ['Sets de herramientas', /\bset\b|\bkit\b|juego|jgo|\d+ ?(pz|pcs|piezas)/],
     ['Muebles y bancos', /mueble|banco|mesa|carro|gabinete|estante|organizador|apilador|zorra|transpaleta/],
@@ -576,7 +592,7 @@ const SUBSECCIONES = {
   'Herramientas manuales': [
     ['Llaves', /llave/],
     ['Pinzas', /pinza|alicate|tenaza/],
-    ['Sets y combos', /\bset\b|\bkit\b|combo|juego|jgo/],
+    ['Set de herramientas', /\bset\b|\bkit\b|combo|juego|jgo/],
   ],
 };
 let subsec = null;
@@ -642,6 +658,23 @@ function categoriaDe(p){
   }
   p._cat = OTROS;
   return OTROS;
+}
+
+// Sin contar la principal: hay productos que el cliente busca en mas de un lado.
+// El mezclador es de construccion, pero tambien se usa para revolver pintura.
+// El \b deja afuera "mezcladora de hormigon", que es de construccion y nada mas.
+const EXTRAS = [
+  ['Pintura', /mezclador\b|revolvedora/],
+];
+function categoriasDe(p){
+  if(p._cats) return p._cats;
+  const t = normalizar(p.descripcion||'') + ' # ' + normalizar(p.sku||'');
+  const out = [categoriaDe(p)];
+  for(const [nombre,rx] of EXTRAS){
+    if(rx.test(t) && !out.includes(nombre)) out.push(nombre);
+  }
+  p._cats = out;
+  return out;
 }
 
 function estadoStock(s){ return s>20?'mucho':s>=10?'medio':s>=1?'poco':'no'; }
@@ -806,11 +839,12 @@ function pintarNovedades(todos){
 function pintarSecciones(todos){
   const cuenta = {}, conStock = {};
   todos.forEach(p=>{
-    const c = categoriaDe(p);
-    cuenta[c] = (cuenta[c]||0)+1;
-    if(p.stock>0) conStock[c] = (conStock[c]||0)+1;
+    categoriasDe(p).forEach(c=>{
+      cuenta[c] = (cuenta[c]||0)+1;
+      if(p.stock>0) conStock[c] = (conStock[c]||0)+1;
+    });
   });
-  const orden = [...new Set(CATEGORIAS.map(c=>c[0]))].concat([OTROS]);
+  const orden = [...new Set(CATEGORIAS.map(c=>c[0]).concat(EXTRAS.map(e=>e[0])))].concat([OTROS]);
   document.getElementById('cats').innerHTML = orden.filter(c=>cuenta[c]).map(c=>`
     <button class="cat" data-cat="${c}" style="--c:${COLORES[c]||'#6b7280'}">
       <div class="cn">${c}</div>
@@ -849,7 +883,7 @@ function render(){
   document.getElementById('loadingState').style.display='none';
 
   // El listado arranca en la seccion abierta; en la principal, en todo el catalogo
-  const base = seccion ? todos.filter(p=>categoriaDe(p)===seccion) : todos;
+  const base = seccion ? todos.filter(p=>categoriasDe(p).includes(seccion)) : todos;
 
   const counts={mucho:0,medio:0,poco:0,no:0};
   base.forEach(p=>counts[estadoStock(p.stock)]++);
