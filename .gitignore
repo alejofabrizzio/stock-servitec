@@ -1,2 +1,8 @@
 fotos-pendientes.csv
 f/
+
+# Documentos de trabajo: no van al repo porque Vercel los publicaria
+Pedido*.xlsx
+Garantias*.xlsx
+Circular*.pdf
+Exhibiciones*.docx
