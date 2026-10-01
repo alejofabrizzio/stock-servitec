@@ -62,6 +62,30 @@
   .stat.poco .n{color:var(--poco);}
   .stat.no .n{color:var(--no);}
 
+  /* Banner de la circular y su visor */
+  .circ-banner{display:flex;align-items:center;gap:14px;width:100%;margin-bottom:18px;cursor:pointer;
+               background:linear-gradient(100deg,var(--accent),var(--accent-dark));color:#fff;
+               border:none;border-radius:12px;padding:16px 18px;text-align:left;font-family:inherit;
+               transition:transform .15s,box-shadow .15s;box-shadow:0 2px 10px rgba(227,7,19,.25);}
+  .circ-banner:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(227,7,19,.32);}
+  .circ-banner .ic{flex:0 0 auto;width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,.18);
+                   display:flex;align-items:center;justify-content:center;font-size:21px;}
+  .circ-banner .tx{flex:1;min-width:0;}
+  .circ-banner .t1{display:block;font-size:16px;font-weight:800;letter-spacing:.3px;
+                   text-transform:uppercase;line-height:1.2;}
+  .circ-banner .t2{display:block;font-size:12.5px;opacity:.9;margin-top:3px;}
+  .circ-banner .go{flex:0 0 auto;font-size:13px;font-weight:700;background:#fff;color:var(--accent);
+                   border-radius:999px;padding:7px 14px;white-space:nowrap;}
+
+  .circ{display:none;}
+  .circ .hojas{display:flex;flex-direction:column;gap:14px;}
+  .circ .hojas img{width:100%;height:auto;display:block;border:1px solid var(--border);border-radius:10px;}
+  .circ .cierre{display:flex;justify-content:center;margin:18px 0 4px;}
+  @media(max-width:600px){
+    .circ-banner{flex-wrap:wrap;}
+    .circ-banner .go{width:100%;text-align:center;}
+  }
+
   /* Novedades: los destacados del momento */
   .novedades{display:none;margin-bottom:22px;border:1px solid var(--border);border-radius:12px;
              background:var(--panel);overflow:hidden;}
@@ -372,6 +396,17 @@
     <h2 id="secTitle"></h2>
   </div>
 
+  <div class="circ" id="circ">
+    <div class="secbar" style="display:flex">
+      <button class="back-btn circ-volver">← Volver al inicio</button>
+      <h2 id="circTitulo"></h2>
+    </div>
+    <div class="hojas" id="circHojas"></div>
+    <div class="cierre">
+      <button class="back-btn circ-volver">← Volver al inicio</button>
+    </div>
+  </div>
+
   <div class="subs" id="subs"></div>
 
   <div class="controls" id="controls">
@@ -393,6 +428,8 @@
   </div>
 
   <div class="home" id="home">
+    <div id="circBanners"></div>
+
     <div class="novedades" id="novedades">
       <h2>Novedades <span>lo último que llegó</span></h2>
       <div class="nov-fila" id="novFila"></div>
@@ -1026,6 +1063,54 @@ document.getElementById('cats').addEventListener('click',e=>{
   const b = e.target.closest('.cat');
   if(b) abrirSeccion(b.dataset.cat);
 });
+// --- Circulares: tapan el resto del sitio y vuelven al inicio --------------
+// Para sumar una: generar las hojas en circ/<archivo>-N.jpg y agregarla acá.
+const CIRCULARES = [
+  {id:'temporada', archivo:'temporada', hojas:6,
+   titulo:'Oferta de temporada · Lüsqtoff',
+   bajada:'Hidrolavadoras, bordeadoras, riego y jardín'},
+  {id:'hidros', archivo:'hidros', hojas:3,
+   titulo:'Toda la línea de hidrolavadoras',
+   bajada:'Gamma Pro Wash, Master Wash, Premium Wash y Comet'},
+];
+
+function pintarBanners(){
+  document.getElementById('circBanners').innerHTML = CIRCULARES.map(c=>`
+    <button class="circ-banner" data-circ="${c.id}">
+      <span class="ic">📄</span>
+      <span class="tx">
+        <span class="t1">${c.titulo}</span>
+        <span class="t2">${c.bajada}</span>
+      </span>
+      <span class="go">Ver circular</span>
+    </button>`).join('');
+}
+
+function verCircular(id){
+  const c = CIRCULARES.find(x=>x.id===id);
+  // todo lo del catalogo se oculta mientras se mira la circular
+  ['hero','home','secbar','subs','controls','stats','table','moreBtn','emptyState','loadingState']
+    .forEach(i=>{ const el=document.getElementById(i); if(el) el.style.display = c?'none':''; });
+  document.getElementById('circ').style.display = c?'block':'none';
+  if(c){
+    document.getElementById('circTitulo').textContent = c.titulo;
+    document.getElementById('circHojas').innerHTML =
+      Array.from({length:c.hojas},(_,i)=>
+        `<img src="circ/${c.archivo}-${i+1}.jpg" alt="${c.titulo}, página ${i+1}"
+              loading="${i<2?'eager':'lazy'}">`).join('');
+  } else {
+    render();
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+document.getElementById('circBanners').addEventListener('click',e=>{
+  const b = e.target.closest('[data-circ]');
+  if(b) verCircular(b.dataset.circ);
+});
+document.querySelectorAll('.circ-volver').forEach(b=>
+  b.addEventListener('click',()=>verCircular(null)));
+
 document.getElementById('backBtn').addEventListener('click',()=>{
   seccion = null;
   subsec = null;
@@ -1265,6 +1350,7 @@ document.getElementById('vends').addEventListener('click',e=>{
 Promise.all([loadBin('gamma'),loadBin('lusqtoff'),loadBin('omaha'),loadBin('kld'),cargarFotos()]).then(()=>{
   document.getElementById('loadingState').style.display='none';
   pintarVendedores();
+  pintarBanners();
   pintarBarra();
   render();
 });
