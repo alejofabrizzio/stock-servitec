@@ -523,6 +523,7 @@ let seccion = null;
 // La categoria se deduce de la descripcion, porque los Excel no la traen.
 // Gana la primera regla que coincide, asi que el orden importa.
 const CATEGORIAS = [
+  ['Black Series LQ', /black ?series|iron ?volt|ironvolt|\(black\)|lusqtoff black|black lusqtoff/],
   // Primera de todas: un combo trae varias herramientas y si no se atrapa aca
   // lo termina clasificando la primera que aparezca en la descripcion.
   ['Combos', /^(\(oferta\)\s*)?combo\b|pack constructor|pack hogar|herramientas a bateria - pack/],
@@ -566,6 +567,7 @@ const CATEGORIAS = [
 
 // Un color por seccion, para que los recuadros se distingan entre si
 const COLORES = {
+  'Black Series LQ':'#111111',
   'Combos':'#e30713',
   'Pintura':'#8b3fa8',
   'Termofusoras':'#0e7fb3',
