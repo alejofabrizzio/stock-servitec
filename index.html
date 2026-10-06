@@ -530,7 +530,6 @@ let seccion = null;
 // Gana la primera regla que coincide, asi que el orden importa.
 const CATEGORIAS = [
   ['Black Series LQ', /black ?series|iron ?volt|ironvolt|\(black\)|lusqtoff black|black lusqtoff/],
-  ['Juegos de tubos', /\b(jgo|juego|set)\b[^#]*\btubos?\b|set 4 vasos|tubos y (accesorios|crique|herramientas)|de tubos de impacto/],
   // Primera de todas: un combo trae varias herramientas y si no se atrapa aca
   // lo termina clasificando la primera que aparezca en la descripcion.
   ['Combos', /^(\(oferta\)\s*)?combo\b|pack constructor|pack hogar|herramientas a bateria - pack/],
@@ -574,7 +573,6 @@ const CATEGORIAS = [
 
 // Un color por seccion, para que los recuadros se distingan entre si
 const COLORES = {
-  'Juegos de tubos':'#5c7a12',
   'Black Series LQ':'#111111',
   'Combos':'#e30713',
   'Pintura':'#8b3fa8',
@@ -623,6 +621,8 @@ function guardarPedido(){ try{ localStorage.setItem('pedidoServitec',JSON.string
 // Subsecciones dentro de una seccion. Gana la primera que coincide.
 const SUBSECCIONES = {
   'Taller y máquinas de banco': [
+    // Lista curada por SKU (ver JGOTUBOS); la regex no matchea sola.
+    ['Juegos de tubos', /$^/],
     ['Llaves de impacto', /llave de impacto|llave impacto|llave crique/],
     // Despues de las llaves crique y antes de Muebles, que se lleva los "crique carrito".
     ['Criques', /crique|gato hidraulic|gato de/],
@@ -655,6 +655,8 @@ const PORTADAS = { 'Black Series LQ': 'blackseries.jpg' };
 function subDe(p, seccionNombre){
   const defs = SUBSECCIONES[seccionNombre];
   if(!defs) return null;
+  const sk_=(p.sku||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(seccionNombre==='Taller y máquinas de banco' && JGOTUBOS.has(sk_)) return 'Juegos de tubos';
   const t = normalizar(p.descripcion||'') + ' # ' + normalizar(p.sku||'');
   for(const [nombre,rx] of defs){ if(rx.test(t)) return nombre; }
   return null;
@@ -707,13 +709,14 @@ function normalizar(t){
 }
 
 // SKU que pertenecen a Black Series LQ aunque la descripción no lo diga.
-const TALLER_EXTRA = new Set(['SHL108-7'].map(x=>x.toLowerCase().replace(/[^a-z0-9]/g,'')));
+// SKU que forman la subsección "Juegos de tubos" dentro de Taller (lista curada).
+const JGOTUBOS = new Set(['SHL150-9','SHL108-7','OM 443.JBK-108','OM 471.SHK-216','WDFWST4D21','WDFWMS4D01','WDFWST2D25'].map(x=>x.toLowerCase().replace(/[^a-z0-9]/g,'')));
 const BLACK_EXTRA = new Set(['RL30-9B','VNL150-9BK','KATL-9BK','BSPACK002-9','MDL1500-9','MDL1050-9','LQI1800-9','NV3L-9','NVL515-9','CCL600-9','SML2000-9','AITL32-9B','BSB1820-9','BSB1840-9'].map(x=>x.toLowerCase().replace(/[^a-z0-9]/g,'')));
 function categoriaDe(p){
   if(p._cat) return p._cat;
   if(p.cat){ p._cat=p.cat; return p._cat; }
   const sk_=(p.sku||'').toLowerCase().replace(/[^a-z0-9]/g,'');
-  if(TALLER_EXTRA.has(sk_)){ p._cat='Taller y máquinas de banco'; return p._cat; }
+  if(JGOTUBOS.has(sk_)){ p._cat='Taller y máquinas de banco'; return p._cat; }
   if(BLACK_EXTRA.has(sk_)){ p._cat='Black Series LQ'; return p._cat; }
   const t = normalizar(p.descripcion||'') + ' # ' + normalizar(p.sku||'');
   for(const [nombre,rx] of CATEGORIAS){
@@ -881,7 +884,7 @@ document.querySelectorAll('.upload-section input[type=file]').forEach(input=>{
 
 // Productos cargados a mano (sin precio ni stock). Sobreviven a las cargas de Excel.
 const PRODUCTOS_MANUALES = [
-  { sku:'SHL150-9', descripcion:'SET 150 HERRAMIENTAS RACING LUSQTOFF', precio:0, stock:0, proveedor:'lusqtoff', cat:'Juegos de tubos' },
+  { sku:'SHL150-9', descripcion:'SET 150 HERRAMIENTAS RACING LUSQTOFF', precio:0, stock:0, proveedor:'lusqtoff', cat:'Taller y máquinas de banco', consultar:true },
 ];
 function getAllProductos(){
   return [...data.gamma, ...data.lusqtoff, ...data.omaha, ...data.kld, ...PRODUCTOS_MANUALES];
@@ -1045,7 +1048,7 @@ function render(){
       <td>${p.descripcion}</td>
       <td><span class="marca">${marcaLabel[p.proveedor]||p.proveedor}</span></td>
       <td class="precio">${p.precio>0?'$'+p.precio.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}):'<span style="color:var(--muted);font-weight:400">Consultar</span>'}</td>
-      <td><span class="badge ${est}"><span class="dot"></span>${estadoLabel[est]}</span></td>
+      <td>${p.consultar?'<span class="badge" style="background:#eef2ff;color:#4555a8;border:1px solid #c9d2f0"><span class="dot" style="background:#4555a8"></span>Consultar</span>':`<span class="badge ${est}"><span class="dot"></span>${estadoLabel[est]}</span>`}</td>
       <td class="td-add"><button class="btn-add ${pedido[p.sku]?'puesto':''}" data-sku="${p.sku}"
           title="Agregar al pedido">${pedido[p.sku]?'✓':'+'}</button></td>
     </tr>`;
