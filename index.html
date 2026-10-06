@@ -1014,6 +1014,12 @@ function render(){
   // Mayor stock primero; los que no tienen stock quedan al final.
   filtered.sort((a,b)=>(b.stock||0)-(a.stock||0));
 
+  // La caja Racing va fija arriba de Juegos de tubos, para captar la atención.
+  if(subsec==='Juegos de tubos'){
+    const i=filtered.findIndex(p=>p.sku==='SHL150-9');
+    if(i>0) filtered.unshift(filtered.splice(i,1)[0]);
+  }
+
   if(!filtered.length){
     document.getElementById('table').style.display='none';
     document.getElementById('moreBtn').style.display='none';
