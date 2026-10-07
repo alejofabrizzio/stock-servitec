@@ -68,6 +68,9 @@
                border:none;border-radius:12px;padding:16px 18px;text-align:left;font-family:inherit;
                transition:transform .15s,box-shadow .15s;box-shadow:0 2px 10px rgba(227,7,19,.25);}
   .circ-banner:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(227,7,19,.32);}
+  .circ-banner.neg{background:linear-gradient(100deg,#232323,#000);box-shadow:0 2px 10px rgba(0,0,0,.38);}
+  .circ-banner.neg:hover{box-shadow:0 6px 18px rgba(0,0,0,.5);}
+  .circ-banner.neg .go{color:#111;}
   .circ-banner .ic{flex:0 0 auto;width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,.18);
                    display:flex;align-items:center;justify-content:center;font-size:21px;}
   .circ-banner .tx{flex:1;min-width:0;}
@@ -434,14 +437,14 @@
   </div>
 
   <div class="home" id="home">
-    <div id="circBanners"></div>
-
     <div class="novedades" id="novedades">
       <h2>Novedades <span>lo último que llegó</span></h2>
       <div class="nov-fila" id="novFila"></div>
     </div>
     <p class="home-title">Elegí una sección</p>
     <div class="cats" id="cats"></div>
+
+    <div id="circBanners"></div>
   </div>
 
   <table id="table">
@@ -663,7 +666,7 @@ function subDe(p, seccionNombre){
 }
 
 // Destacados de la portada. Para cambiarlos, editar esta lista de SKU.
-const NOVEDADES = ['KLDLIB500','MCL150-8','LC2550BK-8','LT-590','EMTECKL202734','ST-1B','KLDDE55','INCUT-40','ACL2TS100'];
+const NOVEDADES = ['GM G1844AR','GM G2860AR','MX-1400','OM 442.SC-1400','MEGAIRON100-8','SHL150-9','L-820'];
 
 // --- Fotos de producto (Supabase Storage) -----------------------------
 // El bucket se lee UNA sola vez al arrancar y se arma un indice por SKU.
@@ -1109,20 +1112,20 @@ const CIRCULARES = [
   {id:'temporada', archivo:'temporada', hojas:8,
    titulo:'Oferta de temporada · Lüsqtoff',
    bajada:'Hidrolavadoras, bordeadoras, riego y jardín'},
-  {id:'hidros', archivo:'hidros', hojas:3,
-   titulo:'Toda la línea de hidrolavadoras',
-   bajada:'Gamma Pro Wash, Master Wash, Premium Wash y Comet'},
+  {id:'blackseries', seccion:'Black Series LQ', color:'negro',
+   titulo:'Black Series · Lüsqtoff',
+   bajada:'Toda la línea black: baterías, herramientas y combos'},
 ];
 
 function pintarBanners(){
   document.getElementById('circBanners').innerHTML = CIRCULARES.map(c=>`
-    <button class="circ-banner" data-circ="${c.id}">
-      <span class="ic">📄</span>
+    <button class="circ-banner${c.color==='negro'?' neg':''}" data-circ="${c.id}">
+      <span class="ic">${c.seccion?'⚡':'📄'}</span>
       <span class="tx">
         <span class="t1">${c.titulo}</span>
         <span class="t2">${c.bajada}</span>
       </span>
-      <span class="go">Ver circular</span>
+      <span class="go">${c.seccion?'Ver sección':'Ver circular'}</span>
     </button>`).join('');
 }
 
@@ -1146,7 +1149,10 @@ function verCircular(id){
 
 document.getElementById('circBanners').addEventListener('click',e=>{
   const b = e.target.closest('[data-circ]');
-  if(b) verCircular(b.dataset.circ);
+  if(!b) return;
+  const c = CIRCULARES.find(x=>x.id===b.dataset.circ);
+  if(c && c.seccion){ abrirSeccion(c.seccion); window.scrollTo({top:0,behavior:'smooth'}); return; }
+  verCircular(b.dataset.circ);
 });
 document.querySelectorAll('.circ-volver').forEach(b=>
   b.addEventListener('click',()=>verCircular(null)));
