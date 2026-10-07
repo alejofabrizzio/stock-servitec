@@ -738,12 +738,21 @@ function categoriaDe(p){
 const EXTRAS = [
   ['Pintura', /mezclador\b|revolvedora/],
 ];
+// Igual que EXTRAS pero por SKU: productos que aparecen en otra sección además
+// de la suya (sin sacarlos de la original). Ej: la línea black que también va en Construcción.
+const EXTRAS_SKU = {
+  'Construcción': new Set(['MDL1500-9','CCL600-9','VNL150-9BK'].map(x=>x.toLowerCase().replace(/[^a-z0-9]/g,''))),
+};
 function categoriasDe(p){
   if(p._cats) return p._cats;
   const t = normalizar(p.descripcion||'') + ' # ' + normalizar(p.sku||'');
   const out = [categoriaDe(p)];
   for(const [nombre,rx] of EXTRAS){
     if(rx.test(t) && !out.includes(nombre)) out.push(nombre);
+  }
+  const sk_=(p.sku||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  for(const nombre in EXTRAS_SKU){
+    if(EXTRAS_SKU[nombre].has(sk_) && !out.includes(nombre)) out.push(nombre);
   }
   p._cats = out;
   return out;
