@@ -561,7 +561,8 @@ const CATEGORIAS = [
   // Antes de compresores: el equipo o la pistola de pintar van a Pintura, pero un
   // compresor que incluye pistola en el kit sigue siendo compresor (por eso el ^).
   ['Pintura', /^(\(oferta\)\s*)?(equipo [a-z\/ ]{0,16}pintar|pistola [a-z\/\. ]{0,16}pintar|pist\.? de pintar|aerografo|latex|acrilico [a-z ]{0,12}pileta)/],
-  ['Compresores y neumática', /compresor|neumatic|pistola|aerografo|soplete|p\/ ?pintar|para pintar|airless|arenadora|acople rapido|manguera de aire|inflador|regulador de presion/],
+  ['Compresores', /compresor/],
+  ['Neumáticos', /neumatic|pistola|aerografo|soplete|p\/ ?pintar|para pintar|airless|arenadora|acople rapido|manguera de aire|inflador|regulador de presion/],
   ['Hidrolavadoras y aspiradoras', /hidrolav|aspirador|karcher|barredora|lustradora|limpiavidrio|limpiador|a vapor|alta presion/],
   ['Bombas de agua', /bomba|electrobomba|presurizador|termotanque|calefon|tanque de agua|flotante/],
   ['Generadores y energía', /generador|grupo electr|\bmotor\b|motobomba|motocompresor|\bups\b|estabilizador|inversor|panel solar/],
@@ -593,7 +594,8 @@ const COLORES = {
   'Sierras y carpintería':'#6b3fa0',
   'Lijadoras y pulidoras':'#a5820a',
   'Soldadura':'#1f2937',
-  'Compresores y neumática':'#7d2b8f',
+  'Compresores':'#7d2b8f',
+  'Neumáticos':'#2b6f8f',
   'Hidrolavadoras y aspiradoras':'#0b7ea8',
   'Bombas de agua':'#1256a0',
   'Generadores y energía':'#0f7b7b',
@@ -890,8 +892,11 @@ document.querySelectorAll('.upload-section input[type=file]').forEach(input=>{
 const PRODUCTOS_MANUALES = [
   { sku:'SHL150-9', descripcion:'SET 150 HERRAMIENTAS RACING LUSQTOFF', precio:0, stock:0, proveedor:'lusqtoff', cat:'Taller y máquinas de banco', consultar:true },
 ];
+// SKU que no se muestran aunque vengan en el Excel (se filtran en cada carga).
+const EXCLUIDOS = new Set(['SLXCO42K'].map(x=>x.toLowerCase().replace(/[^a-z0-9]/g,'')));
 function getAllProductos(){
-  return [...data.gamma, ...data.lusqtoff, ...data.omaha, ...data.kld, ...PRODUCTOS_MANUALES];
+  return [...data.gamma, ...data.lusqtoff, ...data.omaha, ...data.kld, ...PRODUCTOS_MANUALES]
+    .filter(p=>!EXCLUIDOS.has((p.sku||'').toLowerCase().replace(/[^a-z0-9]/g,'')));
 }
 
 function pintarNovedades(todos){
