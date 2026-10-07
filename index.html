@@ -437,6 +437,7 @@
   </div>
 
   <div class="home" id="home">
+    <div id="circTop"></div>
     <div class="novedades" id="novedades">
       <h2>Novedades <span>lo último que llegó</span></h2>
       <div class="nov-fila" id="novFila"></div>
@@ -1112,13 +1113,13 @@ const CIRCULARES = [
   {id:'temporada', archivo:'temporada', hojas:8,
    titulo:'Oferta de temporada · Lüsqtoff',
    bajada:'Hidrolavadoras, bordeadoras, riego y jardín'},
-  {id:'blackseries', seccion:'Black Series LQ', color:'negro',
+  {id:'blackseries', seccion:'Black Series LQ', color:'negro', pos:'top',
    titulo:'Black Series · Lüsqtoff',
    bajada:'Toda la línea black: baterías, herramientas y combos'},
 ];
 
 function pintarBanners(){
-  document.getElementById('circBanners').innerHTML = CIRCULARES.map(c=>`
+  const html=c=>`
     <button class="circ-banner${c.color==='negro'?' neg':''}" data-circ="${c.id}">
       <span class="ic">${c.seccion?'⚡':'📄'}</span>
       <span class="tx">
@@ -1126,7 +1127,9 @@ function pintarBanners(){
         <span class="t2">${c.bajada}</span>
       </span>
       <span class="go">${c.seccion?'Ver sección':'Ver circular'}</span>
-    </button>`).join('');
+    </button>`;
+  document.getElementById('circTop').innerHTML = CIRCULARES.filter(c=>c.pos==='top').map(html).join('');
+  document.getElementById('circBanners').innerHTML = CIRCULARES.filter(c=>c.pos!=='top').map(html).join('');
 }
 
 function verCircular(id){
@@ -1147,13 +1150,15 @@ function verCircular(id){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-document.getElementById('circBanners').addEventListener('click',e=>{
+function onBannerClick(e){
   const b = e.target.closest('[data-circ]');
   if(!b) return;
   const c = CIRCULARES.find(x=>x.id===b.dataset.circ);
   if(c && c.seccion){ abrirSeccion(c.seccion); window.scrollTo({top:0,behavior:'smooth'}); return; }
   verCircular(b.dataset.circ);
-});
+}
+document.getElementById('circBanners').addEventListener('click',onBannerClick);
+document.getElementById('circTop').addEventListener('click',onBannerClick);
 document.querySelectorAll('.circ-volver').forEach(b=>
   b.addEventListener('click',()=>verCircular(null)));
 
