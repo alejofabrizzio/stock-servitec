@@ -770,7 +770,8 @@ function fmtFecha(iso){
 async function loadBin(prov){
   try{
     const r = await fetch(`${SUPABASE_URL}/rest/v1/productos?proveedor=eq.${prov}&select=productos,last_update`,{
-      headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`}
+      headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`},
+      cache:'no-store'
     });
     if(!r.ok) return;
     const rows = await r.json();
