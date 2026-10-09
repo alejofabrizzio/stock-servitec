@@ -776,7 +776,9 @@ async function loadBin(prov){
     if(!r.ok) return;
     const rows = await r.json();
     const row = rows[0];
-    data[prov] = (row && row.productos) || [];
+    // Algunas filas de la base quedaron guardadas sin la columna proveedor:
+    // se completa acá para que la marca y el filtro por marca funcionen.
+    data[prov] = ((row && row.productos) || []).map(x => x.proveedor ? x : {...x, proveedor: prov});
     if(row && row.last_update && (!lastUpdate || row.last_update > lastUpdate)) lastUpdate = row.last_update;
   }catch(e){ console.error(prov, e); }
 }
