@@ -119,8 +119,6 @@
   .cat .cc b{color:var(--mucho);font-weight:700;}
 
   /* Portada de una sección (ej: Black Series) */
-  .secbanner{display:none;margin-bottom:14px;border-radius:12px;overflow:hidden;border:1px solid var(--border);}
-  .secbanner img{display:block;width:100%;height:auto;}
 
   /* Barra de la seccion abierta */
   .secbar{display:none;align-items:center;gap:12px;margin-bottom:14px;}
@@ -414,7 +412,6 @@
     </div>
   </div>
 
-  <div class="secbanner" id="secbanner"><img id="secbannerImg" src="" alt=""></div>
 
   <div class="subs" id="subs"></div>
 
@@ -656,7 +653,6 @@ const SUBSECCIONES = {
 let subsec = null;
 
 // Portada opcional por sección
-const PORTADAS = { 'Black Series LQ': 'blackseries.jpg' };
 
 function subDe(p, seccionNombre){
   const defs = SUBSECCIONES[seccionNombre];
@@ -990,11 +986,8 @@ function render(){
   if(!enPortada){ const nv=document.getElementById('novedades'); if(nv) nv.style.display='none'; }
   document.getElementById('secbar').style.display = seccion?'flex':'none';
   document.getElementById('secTitle').textContent = seccion||'';
-  const banner=document.getElementById('secbanner'), bImg=document.getElementById('secbannerImg');
-  if(seccion && PORTADAS[seccion] && !search){
-    if(bImg.getAttribute('src')!==PORTADAS[seccion]) bImg.src=PORTADAS[seccion];
-    banner.style.display='block';
-  } else banner.style.display='none';
+  // Dentro de una seccion no va ningun cartel arriba: se entra directo al listado
+  document.getElementById('hero').style.display = enPortada?'':'none';
   document.getElementById('controls').style.display='flex';
   // En la pantalla principal solo hace falta el buscador
   document.getElementById('filterEstado').style.display = enPortada?'none':'block';
