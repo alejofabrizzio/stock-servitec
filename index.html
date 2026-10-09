@@ -695,7 +695,10 @@ async function cargarFotos(){
         if(!o || !o.name || !/\.(jpe?g|png|webp|gif|avif)$/i.test(o.name)) return;
         const base = o.name.replace(/\.[^.]+$/,'');
         const k = claveFoto(base);
-        if(k && !fotos[k]) fotos[k] = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_FOTOS}/${encodeURIComponent(o.name)}`;
+        // La fecha del archivo va en la URL: si se reemplaza una foto se ve al
+        // instante, sin esperar la hora de cache del CDN.
+        const ver = Date.parse(o.updated_at||'')||0;
+        if(k && !fotos[k]) fotos[k] = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_FOTOS}/${encodeURIComponent(o.name)}${ver?`?v=${ver}`:''}`;
       });
       if(lista.length < 1000) return;
       offset += 1000;
