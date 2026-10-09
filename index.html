@@ -537,11 +537,11 @@ const CATEGORIAS = [
   // Primera de todas: un combo trae varias herramientas y si no se atrapa aca
   // lo termina clasificando la primera que aparezca en la descripcion.
   ['Combos', /^(\(oferta\)\s*)?combo\b|pack constructor|pack hogar|herramientas a bateria - pack/],
-  ['Taller y máquinas de banco', /llave de impacto|llave impacto|llave de imp\b|#[^#]*\bshk-?\d|gabinete|kit de herramientas neumatica|juego de herramientas neumatica/],
+  ['Taller y máquinas de banco', /llave de impacto|llave impacto|llave de imp\b|#[^#]*\bshk-?\d|gabinete(?! porta)|kit de herramientas neumatica|juego de herramientas neumatica/],
   ['Termofusoras', /termofusora|termofusion/],
   ['Cortadoras sensitivas', /sensitiva|tronzadora/],
   ['Pistolas de calor', /pistola de calor|pistola calor|decapador/],
-  ['Porta herramientas', /^(\(oferta\)\s*)?(caja|cajon|bolso|mochila|valija|carro|banco|estante|organizador|porta)[a-z\/ ]{0,14}(de |para |porta)?herramienta|^(\(oferta\)\s*)?(caja|cajon|bolso) (de |para )?herramienta/],
+  ['Porta herramientas', /^(\(oferta\)\s*)?(caja|cajon|bolso|mochila|valija|carro|banco|estante|organizador|porta|gabinete)[a-z\/ ]{0,14}(de |para |porta)?herramienta|^(\(oferta\)\s*)?(caja|cajon|bolso) (de |para )?herramienta/],
   ['Taller y máquinas de banco', /cargador ?[-\/ ]? ?arrancador|arrancador|cargador (de )?bat|cargador mantenedor|cargador\/arrancador|booster/],
   // Antes de Outdoor, que se lleva cualquier "botella": el criquet botella es un gato.
   ['Taller y máquinas de banco', /crique[a-z]* botella/],
@@ -560,9 +560,9 @@ const CATEGORIAS = [
   ['Soldadura', /soldador|soldadura|soldar|inverter|electrodo|masc ?p\/ ?sold|careta|\bmig\b|\btig\b|\bmma\b|estanar|oxicorte|antorcha|plasma/],
   // Antes de compresores: el equipo o la pistola de pintar van a Pintura, pero un
   // compresor que incluye pistola en el kit sigue siendo compresor (por eso el ^).
-  ['Pintura', /^(\(oferta\)\s*)?(equipo [a-z\/ ]{0,16}pintar|pistola [a-z\/\. ]{0,16}pintar|pist\.? de pintar|aerografo|latex|acrilico [a-z ]{0,12}pileta)/],
+  ['Pintura', /^(\(oferta\)\s*)?(equipo [a-z\/ ]{0,16}pintar|pistola [a-z\/\. ]{0,16}pintar|pist\.? de pintar|aerografo|latex|acrilico [a-z ]{0,12}pileta)|pincel|brocha|rodillo (para |p\/ ?)?pintar/],
   ['Compresores', /compresor/],
-  ['Neumáticos', /neumatic|pistola|aerografo|soplete|p\/ ?pintar|para pintar|airless|arenadora|acople rapido|manguera de aire|inflador|regulador de presion/],
+  ['Neumáticos', /neumatic|pistola|aerografo|soplete|p\/ ?pintar|para pintar|airless|arenadora|acople rapido|manguera de aire|inflador|regulador de presion|(clavadora|engrampadora|grampadora)[^#]*\d+ ?bar\b|#[^#]*c8003/],
   ['Hidrolavadoras y aspiradoras', /hidrolav|aspirador|karcher|barredora|lustradora|limpiavidrio|limpiador|a vapor|alta presion/],
   ['Bombas de agua', /bomba|electrobomba|presurizador|termotanque|calefon|tanque de agua|flotante/],
   ['Generadores y energía', /generador|grupo electr|\bmotor\b|motobomba|motocompresor|\bups\b|estabilizador|inversor|panel solar/],
@@ -716,7 +716,7 @@ function normalizar(t){
 
 // SKU que pertenecen a Black Series LQ aunque la descripción no lo diga.
 // SKU que forman la subsección "Juegos de tubos" dentro de Taller (lista curada).
-const JGOTUBOS = new Set(['SHL150-9','SHL108-7','OM 443.JBK-108','OM 471.SHK-216','WDFWST4D21','WDFWMS4D01','WDFWST2D25'].map(x=>x.toLowerCase().replace(/[^a-z0-9]/g,'')));
+const JGOTUBOS = new Set(['SHL150-9','SHL108-7','OM 443.JBK-108','OM 443.JBK-46','OM 443.JBK-40','OM 471.SHK-216','WDFWST4D21','WDFWMS4D01','WDFWST2D25'].map(x=>x.toLowerCase().replace(/[^a-z0-9]/g,'')));
 const BLACK_EXTRA = new Set(['RL30-9B','VNL150-9BK','KATL-9BK','BSPACK002-9','MDL1500-9','MDL1050-9','LQI1800-9','NV3L-9','NVL515-9','CCL600-9','SML2000-9','AITL32-9B','BSB1820-9','BSB1840-9'].map(x=>x.toLowerCase().replace(/[^a-z0-9]/g,'')));
 function categoriaDe(p){
   if(p._cat) return p._cat;
