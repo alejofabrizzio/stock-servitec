@@ -1201,11 +1201,9 @@ document.getElementById('cats').addEventListener('click',e=>{
 });
 // --- Circulares: tapan el resto del sitio y vuelven al inicio --------------
 // Para sumar una: generar las hojas en circ/<archivo>-N.jpg y agregarla acá.
-const CIRCULARES = [
-  {id:'temporada', archivo:'temporada', hojas:8,
-   titulo:'Oferta de temporada · Lüsqtoff',
-   bajada:'Hidrolavadoras, bordeadoras, riego y jardín'},
-];
+// Vacio: no hay ninguna circular publicada. Para sumar una, agregar aca
+// {id, archivo, hojas, titulo, bajada} y las hojas en circ/<archivo>-N.jpg.
+const CIRCULARES = [];
 
 function pintarBanners(){
   const html=c=>`
