@@ -43,6 +43,17 @@
                   transition:background .2s,transform .2s;box-shadow:0 0 3px rgba(0,0,0,.5);}
   .hero .puntos b.on{background:#fff;transform:scale(1.25);}
 
+  /* Tarjeta de video: va al final de la grilla de secciones */
+  .cat.video{display:block;text-decoration:none;border-left-color:#d6249f;
+             background:linear-gradient(135deg,#fff 60%,#fdf2fb);}
+  .cat.video .cn{display:flex;align-items:center;gap:7px;}
+  .cat.video .vwrap{display:flex;align-items:center;gap:11px;}
+  .cat.video .th{flex:0 0 auto;width:56px;height:56px;object-fit:cover;border-radius:9px;
+                 border:1px solid var(--border);background:#eee;}
+  .cat.video .play{flex:0 0 auto;width:20px;height:20px;border-radius:50%;font-size:10px;color:#fff;
+                   display:flex;align-items:center;justify-content:center;
+                   background:linear-gradient(45deg,#f09433,#dc2743,#bc1888);}
+
   .upload-section{display:none;margin-bottom:18px;}
   .foto-info{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--accent);
              border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--muted);}
@@ -141,7 +152,7 @@
 
   /* Pantalla principal: secciones */
   .home{display:none;}
-  .home-title{font-size:13px;color:var(--muted);margin:0 0 12px 0;font-weight:600;}
+  .home-title{scroll-margin-top:12px;font-size:13px;color:var(--muted);margin:0 0 12px 0;font-weight:600;}
   .cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
   .cat{position:relative;text-align:left;background:var(--panel2);border:1px solid var(--border);
        border-left:4px solid var(--c);border-radius:10px;padding:13px 14px 13px 15px;cursor:pointer;
@@ -483,9 +494,9 @@
       <span class="ic">📒</span>
       <span class="tx">
         <span class="t1">Catálogo</span>
-        <span class="t2">Todos los productos, de todas las marcas</span>
+        <span class="t2">Todas las secciones, de todas las marcas</span>
       </span>
-      <span class="go">Ver catálogo</span>
+      <span class="go">Ver secciones</span>
     </button>
     <div class="envios">
       <img src="envios.png" alt="" loading="lazy" onerror="this.remove()">
@@ -582,7 +593,6 @@ let limite = PASO;
 // Seccion abierta. null = pantalla principal con las secciones.
 let seccion = null;
 let linea = null;   // marca abierta desde la barra de lineas
-let catalogo = false; // listado completo, abierto desde el boton Catalogo
 
 // La categoria se deduce de la descripcion, porque los Excel no la traen.
 // Gana la primera regla que coincide, asi que el orden importa.
@@ -1015,6 +1025,13 @@ function pintarNovedades(todos){
   }).join('');
 }
 
+// Videos del Instagram de Servitec. Para sumar uno, agregar {titulo, url} aca.
+const VIDEOS = [
+  {titulo:'Hidrolavadora a batería Lüsqtoff', url:'https://www.instagram.com/reel/DcQ-CAUyiyg/'},
+  {titulo:'Pedidos y despachos',              url:'https://www.instagram.com/reel/Day9beCPsVm/'},
+  {titulo:'Nuestro día a día',                url:'https://www.instagram.com/reel/Dc2CuRnvwYe/'},
+];
+
 function pintarSecciones(todos){
   const cuenta = {}, conStock = {};
   todos.forEach(p=>{
@@ -1024,17 +1041,27 @@ function pintarSecciones(todos){
     });
   });
   const orden = [...new Set(CATEGORIAS.map(c=>c[0]).concat(EXTRAS.map(e=>e[0])))].concat([OTROS]);
-  document.getElementById('cats').innerHTML = orden.filter(c=>cuenta[c]).map(c=>`
+  const secciones = orden.filter(c=>cuenta[c]).map(c=>`
     <button class="cat" data-cat="${c}" style="--c:${COLORES[c]||'#6b7280'}">
       <div class="cn">${c}</div>
       <div class="cc"><b>${conStock[c]||0}</b> de ${cuenta[c]} disponibles</div>
     </button>`).join('');
+  const videos = VIDEOS.map(v=>`
+    <a class="cat video" href="${v.url}" target="_blank" rel="noopener">
+      <div class="vwrap">
+        ${v.foto?`<img class="th" src="${v.foto}" alt="" loading="lazy" onerror="this.remove()">`:''}
+        <span>
+          <span class="cn"><span class="play">▶</span>${v.titulo}</span>
+          <span class="cc">Ver el video en Instagram</span>
+        </span>
+      </div>
+    </a>`).join('');
+  document.getElementById('cats').innerHTML = secciones + videos;
 }
 
 function abrirSeccion(c){
   seccion = c;
   linea = null;
-  catalogo = false;
   subsec = null;
   limite = PASO;
   document.getElementById('search').value = '';
@@ -1044,23 +1071,17 @@ function abrirSeccion(c){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function abrirCatalogo(){
-  catalogo = true;
-  seccion = null;
-  linea = null;
-  subsec = null;
-  limite = PASO;
-  document.getElementById('search').value = '';
-  document.getElementById('filterEstado').value = '';
-  document.getElementById('filterProv').value = '';
-  render();
-  window.scrollTo({top:0,behavior:'smooth'});
+function irASecciones(e){
+  const t = document.querySelector('.home-title');
+  if(!t) return;
+  // el foco que deja el click vuelve a subir la pagina y corta el scroll suave
+  if(e && e.currentTarget && e.currentTarget.blur) e.currentTarget.blur();
+  requestAnimationFrame(()=>t.scrollIntoView({behavior:'smooth',block:'start'}));
 }
 
 function abrirLinea(id){
   linea = id;
   seccion = null;
-  catalogo = false;
   subsec = null;
   limite = PASO;
   document.getElementById('search').value = '';
@@ -1090,8 +1111,7 @@ function render(){
   document.getElementById('loadingState').style.display='none';
 
   // El listado arranca en la seccion o la linea abierta; en la principal, en todo el catalogo
-  const base = catalogo ? todos
-             : linea ? todos.filter(p=>marcaDe(p)===linea)
+  const base = linea ? todos.filter(p=>marcaDe(p)===linea)
              : seccion ? todos.filter(p=>categoriasDe(p).includes(seccion))
              : todos;
 
@@ -1104,7 +1124,7 @@ function render(){
   document.getElementById('statNo').textContent=counts.no;
   document.getElementById('stats').style.display = isAdmin?'grid':'none';
 
-  const enPortada = !seccion && !linea && !catalogo && !search;
+  const enPortada = !seccion && !linea && !search;
   document.getElementById('home').style.display = enPortada?'block':'none';
   if(!enPortada){ const nv=document.getElementById('novedades'); if(nv) nv.style.display='none'; }
   // Desde cualquier pantalla se puede volver: la barra aparece siempre que no sea la portada
@@ -1112,7 +1132,7 @@ function render(){
   document.getElementById('backBtn').textContent = seccion ? '← Secciones' : '← Inicio';
   document.getElementById('secbar').style.display = enPortada?'none':'flex';
   document.getElementById('secTitle').textContent =
-      lin ? `Línea ${lin[1]}` : seccion ? seccion : catalogo ? 'Catálogo completo' : 'Resultados de la búsqueda';
+      lin ? `Línea ${lin[1]}` : seccion ? seccion : 'Resultados de la búsqueda';
   // Dentro de una seccion no va ningun cartel arriba: se entra directo al listado
   document.getElementById('hero').style.display = enPortada?'':'none';
   document.getElementById('controls').style.display='flex';
@@ -1241,7 +1261,7 @@ document.getElementById('subs').addEventListener('click',e=>{
   render();
 });
 
-document.getElementById('btnCatalogo').addEventListener('click',abrirCatalogo);
+document.getElementById('btnCatalogo').addEventListener('click',irASecciones);
 
 document.getElementById('lineas').addEventListener('click',e=>{
   const b=e.target.closest('[data-linea]');
@@ -1305,7 +1325,6 @@ document.querySelectorAll('.circ-volver').forEach(b=>
 document.getElementById('backBtn').addEventListener('click',()=>{
   seccion = null;
   linea = null;
-  catalogo = false;
   subsec = null;
   limite = PASO;
   document.getElementById('search').value='';
