@@ -31,6 +31,13 @@
   .hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;
             opacity:0;transition:opacity .9s ease;}
   .hero img.on{opacity:1;}
+  .hero .flecha{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:42px;height:62px;
+                display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;
+                background:transparent;color:#fff;font-size:34px;line-height:1;opacity:.75;
+                text-shadow:0 2px 8px rgba(0,0,0,.8);transition:opacity .15s,transform .15s;}
+  .hero .flecha:hover{opacity:1;}
+  .hero .flecha.izq{left:2px;}
+  .hero .flecha.der{right:2px;}
   .hero .puntos{position:absolute;left:0;right:0;bottom:10px;display:flex;justify-content:center;gap:7px;z-index:2;}
   .hero .puntos b{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.45);cursor:pointer;
                   transition:background .2s,transform .2s;box-shadow:0 0 3px rgba(0,0,0,.5);}
@@ -97,6 +104,14 @@
     .lineas button{min-height:64px;}
     .lineas .ln{font-size:12px;}
   }
+
+  /* Franja de envios, debajo del boton de catalogo */
+  .envios{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding:10px 16px;
+          background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--accent);
+          border-radius:12px;}
+  .envios img{flex:0 0 auto;height:62px;width:auto;display:block;}
+  .envios .t1{display:block;font-size:15px;font-weight:800;letter-spacing:.2px;text-transform:uppercase;}
+  .envios .t2{display:block;font-size:13px;color:var(--muted);margin-top:2px;}
 
   .circ{display:none;}
   .circ .hojas{display:flex;flex-direction:column;gap:14px;}
@@ -377,6 +392,8 @@
     <img src="hero4.jpg" alt="Baterías Iron Volt Black Series" loading="lazy" onerror="this.remove()">
     <img src="hero2.jpg" alt="" loading="lazy" onerror="this.remove()">
     <img src="hero3.jpg" alt="" loading="lazy" onerror="this.remove()">
+    <button class="flecha izq" id="heroPrev" aria-label="Anterior">&#10094;</button>
+    <button class="flecha der" id="heroNext" aria-label="Siguiente">&#10095;</button>
     <div class="puntos" id="heroPuntos"></div>
   </div>
 
@@ -457,6 +474,21 @@
 
   <div class="home" id="home">
     <div id="circTop"></div>
+    <button class="circ-banner" id="btnCatalogo">
+      <span class="ic">📒</span>
+      <span class="tx">
+        <span class="t1">Catálogo</span>
+        <span class="t2">Todos los productos, de todas las marcas</span>
+      </span>
+      <span class="go">Ver catálogo</span>
+    </button>
+    <div class="envios">
+      <img src="envios.png" alt="" loading="lazy" onerror="this.remove()">
+      <span>
+        <span class="t1">Envíos a todo el país</span>
+        <span class="t2">Seguros ✅</span>
+      </span>
+    </div>
     <div class="novedades" id="novedades">
       <h2>Novedades <span>lo último que llegó</span></h2>
       <div class="nov-fila" id="novFila"></div>
@@ -550,6 +582,7 @@ let limite = PASO;
 // Seccion abierta. null = pantalla principal con las secciones.
 let seccion = null;
 let linea = null;   // marca abierta desde la barra de lineas
+let catalogo = false; // listado completo, abierto desde el boton Catalogo
 
 // La categoria se deduce de la descripcion, porque los Excel no la traen.
 // Gana la primera regla que coincide, asi que el orden importa.
@@ -1001,6 +1034,20 @@ function pintarSecciones(todos){
 function abrirSeccion(c){
   seccion = c;
   linea = null;
+  catalogo = false;
+  subsec = null;
+  limite = PASO;
+  document.getElementById('search').value = '';
+  document.getElementById('filterEstado').value = '';
+  document.getElementById('filterProv').value = '';
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function abrirCatalogo(){
+  catalogo = true;
+  seccion = null;
+  linea = null;
   subsec = null;
   limite = PASO;
   document.getElementById('search').value = '';
@@ -1013,6 +1060,7 @@ function abrirSeccion(c){
 function abrirLinea(id){
   linea = id;
   seccion = null;
+  catalogo = false;
   subsec = null;
   limite = PASO;
   document.getElementById('search').value = '';
@@ -1042,7 +1090,8 @@ function render(){
   document.getElementById('loadingState').style.display='none';
 
   // El listado arranca en la seccion o la linea abierta; en la principal, en todo el catalogo
-  const base = linea ? todos.filter(p=>marcaDe(p)===linea)
+  const base = catalogo ? todos
+             : linea ? todos.filter(p=>marcaDe(p)===linea)
              : seccion ? todos.filter(p=>categoriasDe(p).includes(seccion))
              : todos;
 
@@ -1055,13 +1104,15 @@ function render(){
   document.getElementById('statNo').textContent=counts.no;
   document.getElementById('stats').style.display = isAdmin?'grid':'none';
 
-  const enPortada = !seccion && !linea && !search;
+  const enPortada = !seccion && !linea && !catalogo && !search;
   document.getElementById('home').style.display = enPortada?'block':'none';
   if(!enPortada){ const nv=document.getElementById('novedades'); if(nv) nv.style.display='none'; }
+  // Desde cualquier pantalla se puede volver: la barra aparece siempre que no sea la portada
   const lin = linea ? LINEAS.find(l=>l[0]===linea) : null;
-  document.getElementById('backBtn').textContent = lin ? '← Inicio' : '← Secciones';
-  document.getElementById('secbar').style.display = (seccion||linea)?'flex':'none';
-  document.getElementById('secTitle').textContent = lin ? `Línea ${lin[1]}` : (seccion||'');
+  document.getElementById('backBtn').textContent = seccion ? '← Secciones' : '← Inicio';
+  document.getElementById('secbar').style.display = enPortada?'none':'flex';
+  document.getElementById('secTitle').textContent =
+      lin ? `Línea ${lin[1]}` : seccion ? seccion : catalogo ? 'Catálogo completo' : 'Resultados de la búsqueda';
   // Dentro de una seccion no va ningun cartel arriba: se entra directo al listado
   document.getElementById('hero').style.display = enPortada?'':'none';
   document.getElementById('controls').style.display='flex';
@@ -1190,6 +1241,8 @@ document.getElementById('subs').addEventListener('click',e=>{
   render();
 });
 
+document.getElementById('btnCatalogo').addEventListener('click',abrirCatalogo);
+
 document.getElementById('lineas').addEventListener('click',e=>{
   const b=e.target.closest('[data-linea]');
   if(b) abrirLinea(b.dataset.linea);
@@ -1252,6 +1305,7 @@ document.querySelectorAll('.circ-volver').forEach(b=>
 document.getElementById('backBtn').addEventListener('click',()=>{
   seccion = null;
   linea = null;
+  catalogo = false;
   subsec = null;
   limite = PASO;
   document.getElementById('search').value='';
@@ -1463,7 +1517,10 @@ document.getElementById('vends').addEventListener('click',e=>{
   const hero=document.getElementById('hero');
   if(!hero) return;
   const imgs=[...hero.querySelectorAll('img')];
-  if(imgs.length<2){ const p=document.getElementById('heroPuntos'); if(p) p.remove(); return; }
+  if(imgs.length<2){
+    ['heroPuntos','heroPrev','heroNext'].forEach(i=>{ const e=document.getElementById(i); if(e) e.remove(); });
+    return;
+  }
   const cont=document.getElementById('heroPuntos');
   imgs.forEach((_,i)=>{
     const b=document.createElement('b');
@@ -1479,7 +1536,9 @@ document.getElementById('vends').addEventListener('click',e=>{
     puntos.forEach((b,k)=>b.classList.toggle('on',k===act));
     reiniciar();
   }
-  function reiniciar(){ clearInterval(timer); timer=setInterval(()=>mostrar(act+1),5000); }
+  function reiniciar(){ clearInterval(timer); timer=setInterval(()=>mostrar(act+1),6000); }
+  document.getElementById('heroPrev').addEventListener('click',()=>mostrar(act-1));
+  document.getElementById('heroNext').addEventListener('click',()=>mostrar(act+1));
   reiniciar();
   // no gastar batería ni datos cuando la pestaña no se ve
   document.addEventListener('visibilitychange',()=>{ document.hidden?clearInterval(timer):reiniciar(); });
