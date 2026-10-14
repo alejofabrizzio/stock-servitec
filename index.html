@@ -47,6 +47,7 @@
   .cat.video{display:block;text-decoration:none;border-left-color:#d6249f;
              background:linear-gradient(135deg,#fff 60%,#fdf2fb);}
   .cat.video .cn{display:flex;align-items:center;gap:7px;}
+  .secciones{display:none;}
   #videos .home-title{margin-top:20px;}
   #videos .cats{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));}
   .cat.video{overflow:hidden;}
@@ -490,6 +491,11 @@
     </select>
   </div>
 
+  <div class="secciones" id="secciones">
+    <p class="home-title">Elegí una sección</p>
+    <div class="cats" id="cats"></div>
+  </div>
+
   <div class="home" id="home">
     <div id="circTop"></div>
     <div class="novedades" id="novedades">
@@ -512,9 +518,6 @@
         <span class="t2">Seguros ✅</span>
       </span>
     </div>
-    <p class="home-title">Elegí una sección</p>
-    <div class="cats" id="cats"></div>
-
     <div id="videos"></div>
     <div id="circBanners"></div>
   </div>
@@ -601,6 +604,7 @@ let limite = PASO;
 // Seccion abierta. null = pantalla principal con las secciones.
 let seccion = null;
 let linea = null;   // marca abierta desde la barra de lineas
+let catalogo = false; // pantalla del catalogo: la grilla de secciones
 
 // La categoria se deduce de la descripcion, porque los Excel no la traen.
 // Gana la primera regla que coincide, asi que el orden importa.
@@ -1073,6 +1077,7 @@ function pintarSecciones(todos){
 function abrirSeccion(c){
   seccion = c;
   linea = null;
+  catalogo = false;
   subsec = null;
   limite = PASO;
   document.getElementById('search').value = '';
@@ -1082,17 +1087,23 @@ function abrirSeccion(c){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function irASecciones(e){
-  const t = document.querySelector('.home-title');
-  if(!t) return;
-  // el foco que deja el click vuelve a subir la pagina y corta el scroll suave
-  if(e && e.currentTarget && e.currentTarget.blur) e.currentTarget.blur();
-  requestAnimationFrame(()=>t.scrollIntoView({behavior:'smooth',block:'start'}));
+function abrirCatalogo(){
+  catalogo = true;
+  seccion = null;
+  linea = null;
+  subsec = null;
+  limite = PASO;
+  document.getElementById('search').value = '';
+  document.getElementById('filterEstado').value = '';
+  document.getElementById('filterProv').value = '';
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 function abrirLinea(id){
   linea = id;
   seccion = null;
+  catalogo = false;
   subsec = null;
   limite = PASO;
   document.getElementById('search').value = '';
@@ -1135,26 +1146,27 @@ function render(){
   document.getElementById('statNo').textContent=counts.no;
   document.getElementById('stats').style.display = isAdmin?'grid':'none';
 
-  const enPortada = !seccion && !linea && !search;
+  const enCatalogo = catalogo && !search;
+  const enPortada = !seccion && !linea && !catalogo && !search;
   document.getElementById('home').style.display = enPortada?'block':'none';
+  document.getElementById('secciones').style.display = enCatalogo?'block':'none';
   if(!enPortada){ const nv=document.getElementById('novedades'); if(nv) nv.style.display='none'; }
   // Desde cualquier pantalla se puede volver: la barra aparece siempre que no sea la portada
   const lin = linea ? LINEAS.find(l=>l[0]===linea) : null;
-  document.getElementById('backBtn').textContent = seccion ? '← Secciones' : '← Inicio';
+  document.getElementById('backBtn').textContent = seccion ? '← Catálogo' : '← Inicio';
   document.getElementById('secbar').style.display = enPortada?'none':'flex';
   document.getElementById('secTitle').textContent =
-      lin ? `Línea ${lin[1]}` : seccion ? seccion : 'Resultados de la búsqueda';
+      lin ? `Línea ${lin[1]}` : seccion ? seccion : enCatalogo ? 'Catálogo' : 'Resultados de la búsqueda';
   // Dentro de una seccion no va ningun cartel arriba: se entra directo al listado
   document.getElementById('hero').style.display = enPortada?'':'none';
   document.getElementById('controls').style.display='flex';
   // En la pantalla principal solo hace falta el buscador
-  document.getElementById('filterEstado').style.display = enPortada?'none':'block';
-  document.getElementById('filterProv').style.display = (enPortada||linea)?'none':'block';
+  document.getElementById('filterEstado').style.display = (enPortada||enCatalogo)?'none':'block';
+  document.getElementById('filterProv').style.display = (enPortada||enCatalogo||linea)?'none':'block';
 
-  if(enPortada){
+  if(enPortada || enCatalogo){
     document.getElementById('subs').style.display='none';
-    pintarLineas(todos);
-    pintarNovedades(todos);
+    if(enPortada){ pintarLineas(todos); pintarNovedades(todos); }
     pintarSecciones(todos);
     document.getElementById('table').style.display='none';
     document.getElementById('moreBtn').style.display='none';
@@ -1272,7 +1284,7 @@ document.getElementById('subs').addEventListener('click',e=>{
   render();
 });
 
-document.getElementById('btnCatalogo').addEventListener('click',irASecciones);
+document.getElementById('btnCatalogo').addEventListener('click',abrirCatalogo);
 
 document.getElementById('lineas').addEventListener('click',e=>{
   const b=e.target.closest('[data-linea]');
@@ -1334,6 +1346,8 @@ document.querySelectorAll('.circ-volver').forEach(b=>
   b.addEventListener('click',()=>verCircular(null)));
 
 document.getElementById('backBtn').addEventListener('click',()=>{
+  // de una seccion se vuelve al catalogo, que es de donde se entro
+  catalogo = !!seccion;
   seccion = null;
   linea = null;
   subsec = null;
