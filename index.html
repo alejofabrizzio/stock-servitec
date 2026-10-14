@@ -48,6 +48,10 @@
              background:linear-gradient(135deg,#fff 60%,#fdf2fb);}
   .cat.video .cn{display:flex;align-items:center;gap:7px;}
   #videos .home-title{margin-top:20px;}
+  #videos .cats{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));}
+  .cat.video{overflow:hidden;}
+  .cat.video .vwrap>span{min-width:0;}
+  .cat.video .cn,.cat.video .cc{display:block;}
   .cat.video .vwrap{display:flex;align-items:center;gap:11px;}
   .cat.video .th{flex:0 0 auto;width:56px;height:56px;object-fit:cover;border-radius:9px;
                  border:1px solid var(--border);background:#eee;}
@@ -336,6 +340,8 @@
     .sub{font-size:11px;}
 
     .cats{grid-template-columns:repeat(2,1fr);gap:10px;}
+    /* los videos llevan miniatura: en el celular va uno por fila */
+    #videos .cats{grid-template-columns:1fr;}
     .cat{padding:11px;}
     .cat .cn{font-size:13px;}
     .cat .cc{font-size:11px;margin-top:4px;}
@@ -1029,9 +1035,9 @@ function pintarNovedades(todos){
 
 // Videos del Instagram de Servitec. Para sumar uno, agregar {titulo, url} aca.
 const VIDEOS = [
-  {titulo:'Hidrolavadora a batería Lüsqtoff', url:'https://www.instagram.com/reel/DcQ-CAUyiyg/'},
-  {titulo:'Pedidos y despachos',              url:'https://www.instagram.com/reel/Day9beCPsVm/'},
-  {titulo:'Nuestro día a día',                url:'https://www.instagram.com/reel/Dc2CuRnvwYe/'},
+  {titulo:'Hidrolavadora a batería Lüsqtoff', url:'https://www.instagram.com/reel/DcQ-CAUyiyg/', foto:'vid-hidrolavadora.jpg'},
+  {titulo:'Pedidos y despachos',              url:'https://www.instagram.com/reel/Day9beCPsVm/', foto:'vid-despachos.jpg'},
+  {titulo:'Nuestro día a día',                url:'https://www.instagram.com/reel/Dc2CuRnvwYe/', foto:'vid-diaadia.jpg'},
 ];
 
 function pintarSecciones(todos){
