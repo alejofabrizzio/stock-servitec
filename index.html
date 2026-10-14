@@ -81,7 +81,7 @@
                    border-radius:999px;padding:7px 14px;white-space:nowrap;}
 
   /* Barra de lineas: una sola pieza partida en una celda por marca */
-  .lineas{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;margin-bottom:18px;
+  .lineas{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;margin-bottom:18px;
           background:#3a3a3a;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.38);}
   .lineas button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
                  position:relative;min-height:72px;padding:12px 6px;cursor:pointer;border:none;
@@ -94,8 +94,6 @@
   .lineas .lc{font-size:10.5px;color:#9a9a9a;}
   @media(max-width:600px){
     .lineas{grid-template-columns:repeat(3,1fr);}
-    /* son cinco: la ultima se estira para que no quede un hueco */
-    .lineas button:last-child{grid-column:span 2;}
     .lineas button{min-height:64px;}
     .lineas .ln{font-size:12px;}
   }
@@ -449,6 +447,7 @@
       <option value="gamma">Gamma</option>
       <option value="lusqtoff">Lusqtoff</option>
       <option value="omaha">Omaha</option>
+      <option value="orebro">Orebro</option>
       <option value="wadfow">WADFOW</option>
       <option value="emtop">EMTOP</option>
       <option value="kld">KLD</option>
@@ -458,11 +457,11 @@
 
   <div class="home" id="home">
     <div id="circTop"></div>
-    <div class="lineas" id="lineas"></div>
     <div class="novedades" id="novedades">
       <h2>Novedades <span>lo último que llegó</span></h2>
       <div class="nov-fila" id="novFila"></div>
     </div>
+    <div class="lineas" id="lineas"></div>
     <p class="home-title">Elegí una sección</p>
     <div class="cats" id="cats"></div>
 
@@ -786,18 +785,20 @@ function estadoStock(s){ return s>20?'mucho':s>=10?'medio':s>=1?'poco':'no'; }
 const estadoLabel = {mucho:'Mucho',medio:'Medio',poco:'Poco',no:'Sin stock'};
 // La base guarda la columna como "proveedor"; de cara al usuario se llama marca.
 const marcaLabel = {gamma:'Gamma',lusqtoff:'Lusqtoff',omaha:'Omaha',kld:'KLD',
-                    wadfow:'WADFOW',emtop:'EMTOP',cat:'CAT'};
+                    wadfow:'WADFOW',emtop:'EMTOP',cat:'CAT',orebro:'Orebro'};
 
 // Las lineas de la barra de arriba. KLD trae cuatro marcas en la misma fila de la
 // base, asi que EMTOP y WADFOW se separan por el prefijo del SKU.
 const LINEAS = [
   ['omaha',   'Omaha',    '#e30713'],
+  ['gamma',   'Gamma',    '#1b4ea0'],
   ['lusqtoff','Lüsqtoff', '#f07f13'],
-  ['gamma',   'Gamma',    '#f2b705'],
-  ['emtop',   'EMTOP',    '#2f6fd0'],
-  ['wadfow',  'WADFOW',   '#17a2a2'],
+  ['wadfow',  'WADFOW',   'linear-gradient(90deg,#f58220 50%,#1b4ea0 50%)'],
+  ['emtop',   'EMTOP',    'linear-gradient(90deg,#e4002b 50%,#ffffff 50%)'],
+  ['orebro',  'Orebro',   '#17b5a5'],
 ];
 function marcaDe(p){
+  if(p.proveedor==='omaha') return /orebro/.test(normalizar(p.descripcion)) ? 'orebro' : 'omaha';
   if(p.proveedor!=='kld') return p.proveedor;
   const s = claveFoto(p.sku);
   if(s.startsWith('wdfw')) return 'wadfow';
