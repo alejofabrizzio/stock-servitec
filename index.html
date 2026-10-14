@@ -80,6 +80,26 @@
   .circ-banner .go{flex:0 0 auto;font-size:13px;font-weight:700;background:#fff;color:var(--accent);
                    border-radius:999px;padding:7px 14px;white-space:nowrap;}
 
+  /* Barra de lineas: una sola pieza partida en una celda por marca */
+  .lineas{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;margin-bottom:18px;
+          background:#3a3a3a;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.38);}
+  .lineas button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+                 position:relative;min-height:72px;padding:12px 6px;cursor:pointer;border:none;
+                 background:linear-gradient(100deg,#232323,#000);color:#fff;font-family:inherit;
+                 transition:background .15s;}
+  .lineas button::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--c);}
+  .lineas button:hover{background:#2b2b2b;}
+  .lineas .lt{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#9a9a9a;}
+  .lineas .ln{font-size:14px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;line-height:1.1;}
+  .lineas .lc{font-size:10.5px;color:#9a9a9a;}
+  @media(max-width:600px){
+    .lineas{grid-template-columns:repeat(3,1fr);}
+    /* son cinco: la ultima se estira para que no quede un hueco */
+    .lineas button:last-child{grid-column:span 2;}
+    .lineas button{min-height:64px;}
+    .lineas .ln{font-size:12px;}
+  }
+
   .circ{display:none;}
   .circ .hojas{display:flex;flex-direction:column;gap:14px;}
   .circ .hojas img{width:100%;height:auto;display:block;border:1px solid var(--border);border-radius:10px;}
@@ -429,12 +449,16 @@
       <option value="gamma">Gamma</option>
       <option value="lusqtoff">Lusqtoff</option>
       <option value="omaha">Omaha</option>
+      <option value="wadfow">WADFOW</option>
+      <option value="emtop">EMTOP</option>
       <option value="kld">KLD</option>
+      <option value="cat">CAT</option>
     </select>
   </div>
 
   <div class="home" id="home">
     <div id="circTop"></div>
+    <div class="lineas" id="lineas"></div>
     <div class="novedades" id="novedades">
       <h2>Novedades <span>lo último que llegó</span></h2>
       <div class="nov-fila" id="novFila"></div>
@@ -526,6 +550,7 @@ const PASO = 100;
 let limite = PASO;
 // Seccion abierta. null = pantalla principal con las secciones.
 let seccion = null;
+let linea = null;   // marca abierta desde la barra de lineas
 
 // La categoria se deduce de la descripcion, porque los Excel no la traen.
 // Gana la primera regla que coincide, asi que el orden importa.
@@ -760,7 +785,37 @@ function categoriasDe(p){
 function estadoStock(s){ return s>20?'mucho':s>=10?'medio':s>=1?'poco':'no'; }
 const estadoLabel = {mucho:'Mucho',medio:'Medio',poco:'Poco',no:'Sin stock'};
 // La base guarda la columna como "proveedor"; de cara al usuario se llama marca.
-const marcaLabel = {gamma:'Gamma',lusqtoff:'Lusqtoff',omaha:'Omaha',kld:'KLD'};
+const marcaLabel = {gamma:'Gamma',lusqtoff:'Lusqtoff',omaha:'Omaha',kld:'KLD',
+                    wadfow:'WADFOW',emtop:'EMTOP',cat:'CAT'};
+
+// Las lineas de la barra de arriba. KLD trae cuatro marcas en la misma fila de la
+// base, asi que EMTOP y WADFOW se separan por el prefijo del SKU.
+const LINEAS = [
+  ['omaha',   'Omaha',    '#e30713'],
+  ['lusqtoff','Lüsqtoff', '#f07f13'],
+  ['gamma',   'Gamma',    '#f2b705'],
+  ['emtop',   'EMTOP',    '#2f6fd0'],
+  ['wadfow',  'WADFOW',   '#17a2a2'],
+];
+function marcaDe(p){
+  if(p.proveedor!=='kld') return p.proveedor;
+  const s = claveFoto(p.sku);
+  if(s.startsWith('wdfw')) return 'wadfow';
+  if(s.startsWith('emte')) return 'emtop';
+  if(s.startsWith('cat'))  return 'cat';
+  return 'kld';
+}
+
+function pintarLineas(todos){
+  const con={};
+  todos.forEach(p=>{ if(p.stock>0){ const m=marcaDe(p); con[m]=(con[m]||0)+1; } });
+  document.getElementById('lineas').innerHTML = LINEAS.map(([id,nom,c])=>`
+    <button data-linea="${id}" style="--c:${c}">
+      <span class="lt">Línea</span>
+      <span class="ln">${nom}</span>
+      <span class="lc">${con[id]||0} disponibles</span>
+    </button>`).join('');
+}
 function fmtFecha(iso){
   if(!iso) return '';
   return new Date(iso).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
@@ -921,7 +976,7 @@ function pintarNovedades(todos){
     return `<button class="nov" data-sku="${p.sku}">
       ${f?`<img src="${f}" loading="lazy" alt="">`:''}
       <div class="nt">${p.descripcion.replace(/^\(oferta\)\s*/i,'').split('|')[0].trim()}</div>
-      <div class="nm">${marcaLabel[p.proveedor]||p.proveedor}</div>
+      <div class="nm">${marcaLabel[marcaDe(p)]||p.proveedor}</div>
     </button>`;
   }).join('');
 }
@@ -944,6 +999,19 @@ function pintarSecciones(todos){
 
 function abrirSeccion(c){
   seccion = c;
+  linea = null;
+  subsec = null;
+  limite = PASO;
+  document.getElementById('search').value = '';
+  document.getElementById('filterEstado').value = '';
+  document.getElementById('filterProv').value = '';
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function abrirLinea(id){
+  linea = id;
+  seccion = null;
   subsec = null;
   limite = PASO;
   document.getElementById('search').value = '';
@@ -972,8 +1040,10 @@ function render(){
 
   document.getElementById('loadingState').style.display='none';
 
-  // El listado arranca en la seccion abierta; en la principal, en todo el catalogo
-  const base = seccion ? todos.filter(p=>categoriasDe(p).includes(seccion)) : todos;
+  // El listado arranca en la seccion o la linea abierta; en la principal, en todo el catalogo
+  const base = linea ? todos.filter(p=>marcaDe(p)===linea)
+             : seccion ? todos.filter(p=>categoriasDe(p).includes(seccion))
+             : todos;
 
   const counts={mucho:0,medio:0,poco:0,no:0};
   base.forEach(p=>counts[estadoStock(p.stock)]++);
@@ -984,20 +1054,23 @@ function render(){
   document.getElementById('statNo').textContent=counts.no;
   document.getElementById('stats').style.display = isAdmin?'grid':'none';
 
-  const enPortada = !seccion && !search;
+  const enPortada = !seccion && !linea && !search;
   document.getElementById('home').style.display = enPortada?'block':'none';
   if(!enPortada){ const nv=document.getElementById('novedades'); if(nv) nv.style.display='none'; }
-  document.getElementById('secbar').style.display = seccion?'flex':'none';
-  document.getElementById('secTitle').textContent = seccion||'';
+  const lin = linea ? LINEAS.find(l=>l[0]===linea) : null;
+  document.getElementById('backBtn').textContent = lin ? '← Inicio' : '← Secciones';
+  document.getElementById('secbar').style.display = (seccion||linea)?'flex':'none';
+  document.getElementById('secTitle').textContent = lin ? `Línea ${lin[1]}` : (seccion||'');
   // Dentro de una seccion no va ningun cartel arriba: se entra directo al listado
   document.getElementById('hero').style.display = enPortada?'':'none';
   document.getElementById('controls').style.display='flex';
   // En la pantalla principal solo hace falta el buscador
   document.getElementById('filterEstado').style.display = enPortada?'none':'block';
-  document.getElementById('filterProv').style.display = enPortada?'none':'block';
+  document.getElementById('filterProv').style.display = (enPortada||linea)?'none':'block';
 
   if(enPortada){
     document.getElementById('subs').style.display='none';
+    pintarLineas(todos);
     pintarNovedades(todos);
     pintarSecciones(todos);
     document.getElementById('table').style.display='none';
@@ -1025,7 +1098,7 @@ function render(){
   const filtered=conSub.filter(p=>{
     return(!search||p.sku.toLowerCase().includes(search)||p.descripcion.toLowerCase().includes(search))
       &&(!filtroEst||estadoStock(p.stock)===filtroEst)
-      &&(!filtroProv||p.proveedor===filtroProv);
+      &&(!filtroProv||marcaDe(p)===filtroProv);
   });
 
   // Mayor stock primero; los que no tienen stock quedan al final.
@@ -1040,8 +1113,8 @@ function render(){
   if(!filtered.length){
     document.getElementById('table').style.display='none';
     document.getElementById('moreBtn').style.display='none';
-    document.getElementById('emptyState').textContent = seccion
-      ? `Sin resultados en ${seccion}. Probá volver a las secciones y buscar en todo el catálogo.`
+    document.getElementById('emptyState').textContent = (seccion||lin)
+      ? `Sin resultados en ${lin?('la línea '+lin[1]):seccion}. Probá volver al inicio y buscar en todo el catálogo.`
       : 'Sin resultados para esa búsqueda.';
     document.getElementById('emptyState').style.display='block';
     return;
@@ -1069,7 +1142,7 @@ function render(){
       ${hayFotos ? `<td>${f?`<img class="thumb" src="${f}" loading="lazy" decoding="async" alt="" data-sku="${p.sku}">`:''}</td>` : ''}
       <td class="sku">${p.sku}</td>
       <td>${p.descripcion}</td>
-      <td><span class="marca">${marcaLabel[p.proveedor]||p.proveedor}</span></td>
+      <td><span class="marca">${marcaLabel[marcaDe(p)]||p.proveedor}</span></td>
       <td class="precio">${p.precio>0?'$'+p.precio.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}):'<span style="color:var(--muted);font-weight:400">Consultar</span>'}</td>
       <td>${p.consultar?'<span class="badge" style="background:#eef2ff;color:#4555a8;border:1px solid #c9d2f0"><span class="dot" style="background:#4555a8"></span>Consultar</span>':`<span class="badge ${est}"><span class="dot"></span>${estadoLabel[est]}</span>`}</td>
       <td class="td-add"><button class="btn-add ${pedido[p.sku]?'puesto':''}" data-sku="${p.sku}"
@@ -1116,6 +1189,11 @@ document.getElementById('subs').addEventListener('click',e=>{
   render();
 });
 
+document.getElementById('lineas').addEventListener('click',e=>{
+  const b=e.target.closest('[data-linea]');
+  if(b) abrirLinea(b.dataset.linea);
+});
+
 document.getElementById('cats').addEventListener('click',e=>{
   const b = e.target.closest('.cat');
   if(b) abrirSeccion(b.dataset.cat);
@@ -1126,9 +1204,6 @@ const CIRCULARES = [
   {id:'temporada', archivo:'temporada', hojas:8,
    titulo:'Oferta de temporada · Lüsqtoff',
    bajada:'Hidrolavadoras, bordeadoras, riego y jardín'},
-  {id:'blackseries', seccion:'Black Series LQ', color:'negro', pos:'top',
-   titulo:'Black Series · Lüsqtoff',
-   bajada:'Toda la línea black: baterías, herramientas y combos'},
 ];
 
 function pintarBanners(){
@@ -1177,6 +1252,7 @@ document.querySelectorAll('.circ-volver').forEach(b=>
 
 document.getElementById('backBtn').addEventListener('click',()=>{
   seccion = null;
+  linea = null;
   subsec = null;
   limite = PASO;
   document.getElementById('search').value='';
