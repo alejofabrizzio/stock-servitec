@@ -47,6 +47,7 @@
   .cat.video{display:block;text-decoration:none;border-left-color:#d6249f;
              background:linear-gradient(135deg,#fff 60%,#fdf2fb);}
   .cat.video .cn{display:flex;align-items:center;gap:7px;}
+  #videos .home-title{margin-top:20px;}
   .cat.video .vwrap{display:flex;align-items:center;gap:11px;}
   .cat.video .th{flex:0 0 auto;width:56px;height:56px;object-fit:cover;border-radius:9px;
                  border:1px solid var(--border);background:#eee;}
@@ -508,6 +509,7 @@
     <p class="home-title">Elegí una sección</p>
     <div class="cats" id="cats"></div>
 
+    <div id="videos"></div>
     <div id="circBanners"></div>
   </div>
 
@@ -1046,6 +1048,8 @@ function pintarSecciones(todos){
       <div class="cn">${c}</div>
       <div class="cc"><b>${conStock[c]||0}</b> de ${cuenta[c]} disponibles</div>
     </button>`).join('');
+  document.getElementById('cats').innerHTML = secciones;
+
   const videos = VIDEOS.map(v=>`
     <a class="cat video" href="${v.url}" target="_blank" rel="noopener">
       <div class="vwrap">
@@ -1056,7 +1060,8 @@ function pintarSecciones(todos){
         </span>
       </div>
     </a>`).join('');
-  document.getElementById('cats').innerHTML = secciones + videos;
+  const caja = document.getElementById('videos');
+  caja.innerHTML = videos ? `<p class="home-title">Videos</p><div class="cats">${videos}</div>` : '';
 }
 
 function abrirSeccion(c){
