@@ -744,7 +744,7 @@ function subDe(p, seccionNombre){
 }
 
 // Destacados de la portada. Para cambiarlos, editar esta lista de SKU.
-const NOVEDADES = ['OM 023.DN52PL','BXWPSIQB60','SIMULTIL-8','ACL2TS1LT','ACL40','LC2550BK-8','LQFLUX091','HL1800-8','LCO1203-8B','PROM-52GC','LA-8003M'];
+const NOVEDADES = ['GP2002','OM 023.DN52PL','BXWPSIQB60','SIMULTIL-8','ACL2TS1LT','ACL40','LC2550BK-8','LQFLUX091','HL1800-8','LCO1203-8B','PROM-52GC','LA-8003M'];
 
 // --- Fotos de producto (Supabase Storage) -----------------------------
 // El bucket se lee UNA sola vez al arrancar y se arma un indice por SKU.
@@ -840,7 +840,8 @@ function estadoStock(s){ return s>20?'mucho':s>=10?'medio':s>=1?'poco':'no'; }
 const estadoLabel = {mucho:'Mucho',medio:'Medio',poco:'Poco',no:'Sin stock'};
 // La base guarda la columna como "proveedor"; de cara al usuario se llama marca.
 const marcaLabel = {gamma:'Gamma',lusqtoff:'Lusqtoff',omaha:'Omaha',kld:'KLD',
-                    wadfow:'WADFOW',emtop:'EMTOP',cat:'CAT',orebro:'Orebro'};
+                    wadfow:'WADFOW',emtop:'EMTOP',cat:'CAT',orebro:'Orebro',
+                    gardenplus:'Garden Plus'};
 
 // Las lineas de la barra de arriba. KLD trae cuatro marcas en la misma fila de la
 // base, asi que EMTOP y WADFOW se separan por el prefijo del SKU.
@@ -1013,12 +1014,20 @@ document.querySelectorAll('.upload-section input[type=file]').forEach(input=>{
 // Productos cargados a mano (sin precio ni stock). Sobreviven a las cargas de Excel.
 const PRODUCTOS_MANUALES = [
   { sku:'SHL150-9', descripcion:'SET 150 HERRAMIENTAS RACING LUSQTOFF', precio:0, stock:0, proveedor:'lusqtoff', cat:'Taller y máquinas de banco', consultar:true },
+  { sku:'GP2002', descripcion:'PINZA UNIVERSAL 8" GARDEN PLUS', precio:3700, stock:0, proveedor:'gardenplus', cat:'Herramientas manuales', consultar:true },
 ];
 // SKU que no se muestran aunque vengan en el Excel (se filtran en cada carga).
-const EXCLUIDOS = new Set(['SLXCO42K'].map(x=>x.toLowerCase().replace(/[^a-z0-9]/g,'')));
+const EXCLUIDOS = new Set(['SLXCO42K'].map(x=>claveFoto(x)));
+// La linea CAT no se publica, salvo estos dos (cualquier CAT nuevo tampoco aparece).
+const CAT_VISIBLES = new Set(['CATCOMBO05','CATDA01902'].map(x=>claveFoto(x)));
 function getAllProductos(){
   return [...data.gamma, ...data.lusqtoff, ...data.omaha, ...data.kld, ...PRODUCTOS_MANUALES]
-    .filter(p=>!EXCLUIDOS.has((p.sku||'').toLowerCase().replace(/[^a-z0-9]/g,'')));
+    .filter(p=>{
+      const k = claveFoto(p.sku);
+      if(EXCLUIDOS.has(k)) return false;
+      if(marcaDe(p)==='cat' && !CAT_VISIBLES.has(k)) return false;
+      return true;
+    });
 }
 
 function pintarNovedades(todos){
