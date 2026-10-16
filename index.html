@@ -1032,7 +1032,12 @@ function getAllProductos(){
 
 function pintarNovedades(todos){
   const caja=document.getElementById('novedades'), fila=document.getElementById('novFila');
-  const porSku={}; todos.forEach(p=>porSku[claveFoto(p.sku)]=p);
+  // Hay SKU duplicados en el Excel (EP-7000 y EP7000): gana el que tiene stock
+  const porSku={};
+  todos.forEach(p=>{
+    const k=claveFoto(p.sku), a=porSku[k];
+    if(!a || (p.stock||0)>(a.stock||0)) porSku[k]=p;
+  });
   const items=NOVEDADES.map(s=>porSku[claveFoto(s)]).filter(Boolean);
   if(!items.length){ caja.style.display='none'; return; }
   caja.style.display='block';
