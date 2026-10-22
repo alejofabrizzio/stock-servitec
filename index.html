@@ -1020,6 +1020,9 @@ const PRODUCTOS_MANUALES = [
 const EXCLUIDOS = new Set(['SLXCO42K','OM 034.EA4'].map(x=>claveFoto(x)));
 // La linea CAT no se publica, salvo estos dos (cualquier CAT nuevo tampoco aparece).
 const CAT_VISIBLES = new Set(['CATCOMBO05','CATDA01902'].map(x=>claveFoto(x)));
+// La unidad que hay en deposito esta fallada: se muestra sin stock aunque RP
+// Sistemas la siga contando. Sacar de aca cuando se reponga.
+const SIN_STOCK = new Set(['OM 281.SI-8'].map(x=>claveFoto(x)));
 function getAllProductos(){
   return [...data.gamma, ...data.lusqtoff, ...data.omaha, ...data.kld, ...PRODUCTOS_MANUALES]
     .filter(p=>{
@@ -1027,7 +1030,8 @@ function getAllProductos(){
       if(EXCLUIDOS.has(k)) return false;
       if(marcaDe(p)==='cat' && !CAT_VISIBLES.has(k)) return false;
       return true;
-    });
+    })
+    .map(p => SIN_STOCK.has(claveFoto(p.sku)) ? {...p, stock:0} : p);
 }
 
 function pintarNovedades(todos){
