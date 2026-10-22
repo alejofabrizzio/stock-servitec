@@ -1017,7 +1017,7 @@ const PRODUCTOS_MANUALES = [
   { sku:'GP2002', descripcion:'PINZA UNIVERSAL 8" GARDEN PLUS', precio:3700, stock:0, proveedor:'gardenplus', cat:'Herramientas manuales', consultar:true },
 ];
 // SKU que no se muestran aunque vengan en el Excel (se filtran en cada carga).
-const EXCLUIDOS = new Set(['SLXCO42K'].map(x=>claveFoto(x)));
+const EXCLUIDOS = new Set(['SLXCO42K','OM 034.EA4'].map(x=>claveFoto(x)));
 // La linea CAT no se publica, salvo estos dos (cualquier CAT nuevo tampoco aparece).
 const CAT_VISIBLES = new Set(['CATCOMBO05','CATDA01902'].map(x=>claveFoto(x)));
 function getAllProductos(){
