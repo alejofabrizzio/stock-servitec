@@ -760,29 +760,14 @@ function claveFoto(t){
 }
 
 async function cargarFotos(){
-  let offset = 0;
+  // Las fotos viven en el repo (carpeta fotos/) y las sirve Vercel: Supabase
+  // cortaba el servicio al pasarse de la cuota de trafico del plan gratis.
   try{
-    while(offset < 20000){
-      const r = await fetch(`${SUPABASE_URL}/storage/v1/object/list/${BUCKET_FOTOS}`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`},
-        body:JSON.stringify({prefix:'',limit:1000,offset,sortBy:{column:'name',order:'asc'}})
-      });
-      if(!r.ok) return;
-      const lista = await r.json();
-      if(!Array.isArray(lista) || !lista.length) return;
-      lista.forEach(o=>{
-        if(!o || !o.name || !/\.(jpe?g|png|webp|gif|avif)$/i.test(o.name)) return;
-        const base = o.name.replace(/\.[^.]+$/,'');
-        const k = claveFoto(base);
-        // La fecha del archivo va en la URL: si se reemplaza una foto se ve al
-        // instante, sin esperar la hora de cache del CDN.
-        const ver = Date.parse(o.updated_at||'')||0;
-        if(k && !fotos[k]) fotos[k] = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_FOTOS}/${encodeURIComponent(o.name)}${ver?`?v=${ver}`:''}`;
-      });
-      if(lista.length < 1000) return;
-      offset += 1000;
-    }
+    const r = await fetch('fotos/index.json', {cache:'default'});
+    if(!r.ok) return;
+    const lista = await r.json();
+    if(!Array.isArray(lista)) return;
+    lista.forEach(k=>{ if(k && !fotos[k]) fotos[k] = `fotos/${k}.jpg`; });
   }catch(e){ console.warn('No se pudieron leer las fotos:', e); }
 }
 
@@ -879,15 +864,39 @@ function fmtFecha(iso){
   return new Date(iso).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 }
 
+// Catalogo de respaldo publicado con el sitio. Si Supabase no responde
+// (cuota agotada, caida), el stock se muestra igual desde aca.
+let estaticoCargado = null;
+async function cargarEstatico(){
+  if(estaticoCargado) return estaticoCargado;
+  estaticoCargado = (async ()=>{
+    try{
+      const r = await fetch('stock.json', {cache:'default'});
+      if(!r.ok) return {};
+      const filas = await r.json();
+      const out = {};
+      (filas||[]).forEach(f=>{
+        out[f.proveedor] = (f.productos||[]).map(x => x.proveedor ? x : {...x, proveedor: f.proveedor});
+        if(f.last_update && (!lastUpdate || f.last_update > lastUpdate)) lastUpdate = f.last_update;
+      });
+      return out;
+    }catch(e){ console.warn('stock.json', e); return {}; }
+  })();
+  return estaticoCargado;
+}
+
 async function loadBin(prov){
+  const est = await cargarEstatico();
+  if(est[prov] && est[prov].length) data[prov] = est[prov];
   try{
     const r = await fetch(`${SUPABASE_URL}/rest/v1/productos?proveedor=eq.${prov}&select=productos,last_update`,{
       headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`},
       cache:'no-store'
     });
-    if(!r.ok) return;
+    if(!r.ok) return;              // sin Supabase queda lo del archivo estatico
     const rows = await r.json();
     const row = rows[0];
+    if(!row || !(row.productos||[]).length) return;
     // Algunas filas de la base quedaron guardadas sin la columna proveedor:
     // se completa acá para que la marca y el filtro por marca funcionen.
     data[prov] = ((row && row.productos) || []).map(x => x.proveedor ? x : {...x, proveedor: prov});
