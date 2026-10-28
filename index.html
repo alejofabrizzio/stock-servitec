@@ -745,7 +745,7 @@ function subDe(p, seccionNombre){
 }
 
 // Destacados de la portada. Para cambiarlos, editar esta lista de SKU.
-const NOVEDADES = ['LD415-9','GM G2910AR','GM G2911AR','WDFWWB2141','GP2002','GM G211AR','GM G1844AR','LC2550BK-8','OM 023.DN52PL','OM 175.EP-7000'];
+const NOVEDADES = ['OM 145.LLB-20P','OM 023.EDBAT-20','LD415-9','GM G2910AR','GM G2911AR','WDFWWB2141','GP2002','GM G211AR','GM G1844AR','LC2550BK-8'];
 
 // --- Fotos de producto (Supabase Storage) -----------------------------
 // El bucket se lee UNA sola vez al arrancar y se arma un indice por SKU.
@@ -1033,6 +1033,10 @@ const CAT_VISIBLES = new Set(['CATCOMBO05','CATDA01902'].map(x=>claveFoto(x)));
 // La unidad que hay en deposito esta fallada: se muestra sin stock aunque RP
 // Sistemas la siga contando. Sacar de aca cuando se reponga.
 const SIN_STOCK = new Set(['OM 281.SI-8'].map(x=>claveFoto(x)));
+// Nombres que en el Excel vienen distinto de como se conoce el producto.
+const RENOMBRES = {
+  'om023edbat20': 'BORDEADORA A BATERIA OMAHA',
+};
 function getAllProductos(){
   return [...data.gamma, ...data.lusqtoff, ...data.omaha, ...data.kld, ...PRODUCTOS_MANUALES]
     .filter(p=>{
@@ -1041,7 +1045,8 @@ function getAllProductos(){
       if(marcaDe(p)==='cat' && !CAT_VISIBLES.has(k)) return false;
       return true;
     })
-    .map(p => SIN_STOCK.has(claveFoto(p.sku)) ? {...p, stock:0} : p);
+    .map(p => SIN_STOCK.has(claveFoto(p.sku)) ? {...p, stock:0} : p)
+    .map(p => RENOMBRES[claveFoto(p.sku)] ? {...p, descripcion:RENOMBRES[claveFoto(p.sku)]} : p);
 }
 
 function pintarNovedades(todos){

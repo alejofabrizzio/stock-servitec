@@ -6,3 +6,8 @@ Pedido*.xlsx
 Garantias*.xlsx
 Circular*.pdf
 Exhibiciones*.docx
+
+# Herramientas locales: no se publican (Vercel sirve todo lo que esta en el repo)
+herramientas/
+CLAUDE.md
+.claude/
