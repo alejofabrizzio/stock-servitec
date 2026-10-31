@@ -196,7 +196,7 @@
   thead th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:10px 12px;border-bottom:2px solid var(--border);}
   tbody td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;}
   tbody tr:hover{background:var(--panel);}
-  .thumb{width:46px;height:46px;object-fit:cover;border-radius:6px;border:1px solid var(--border);background:var(--panel);display:block;cursor:zoom-in;}
+  .thumb{width:64px;height:64px;object-fit:contain;border-radius:6px;border:1px solid var(--border);background:#fff;display:block;cursor:zoom-in;}
   .sku{color:var(--muted);font-family:monospace;font-size:12px;}
   .precio{font-weight:600;}
   .marca{display:inline-block;padding:3px 9px;border-radius:6px;background:var(--panel);border:1px solid var(--border);font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
@@ -377,7 +377,7 @@
     /* Orden dentro de la tarjeta: descripcion, luego SKU + marca + estado, luego precio */
     tbody td:nth-child(1){order:0;flex:0 0 auto;}
     tbody td:nth-child(1):empty{display:none;}
-    tbody td:nth-child(1) .thumb{width:62px;height:62px;}
+    tbody td:nth-child(1) .thumb{width:84px;height:84px;}
     tbody td:nth-child(3){order:1;flex:1 1 calc(100% - 78px);font-size:14px;font-weight:600;line-height:1.35;}
     /* Sin foto, la descripcion se queda con todo el ancho de la tarjeta */
     tbody td:nth-child(1):empty + td + td{flex:1 0 100%;}
@@ -778,6 +778,16 @@ function normalizar(t){
   return (t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
 }
 
+// Lo que mira el buscador de cada producto. Suma la marca porque hay lineas que
+// no se nombran en la descripcion, y se guarda calculado: se llama por tecla.
+const _buscable = {};
+function textoBuscable(p){
+  const k = p.sku;
+  if(_buscable[k]) return _buscable[k];
+  const m = marcaDe(p);
+  return _buscable[k] = normalizar(`${p.descripcion} ${p.sku} ${marcaLabel[m]||m} ${p.proveedor||''}`);
+}
+
 // SKU que pertenecen a Black Series LQ aunque la descripción no lo diga.
 // SKU que forman la subsección "Juegos de tubos" dentro de Taller (lista curada).
 const JGOTUBOS = new Set(['SHL150-9','SHL108-7','OM 443.JBK-108','OM 443.JBK-46','OM 443.JBK-40','OM 471.SHK-216','WDFWST4D21','WDFWMS4D01','WDFWST2D25'].map(x=>x.toLowerCase().replace(/[^a-z0-9]/g,'')));
@@ -1033,6 +1043,9 @@ const CAT_VISIBLES = new Set(['CATCOMBO05','CATDA01902'].map(x=>claveFoto(x)));
 // La unidad que hay en deposito esta fallada: se muestra sin stock aunque RP
 // Sistemas la siga contando. Sacar de aca cuando se reponga.
 const SIN_STOCK = new Set(['OM 281.SI-8'].map(x=>claveFoto(x)));
+// Al reves: unidades que estan en el deposito pero RP Sistemas trae en cero.
+// Sacar de aca en cuanto el stock quede bien cargado en RP.
+const CON_STOCK = {'WDFWCD3B214': 2};
 // Nombres que en el Excel vienen distinto de como se conoce el producto.
 const RENOMBRES = {
   'om023edbat20': 'BORDEADORA A BATERIA OMAHA',
@@ -1046,6 +1059,7 @@ function getAllProductos(){
       return true;
     })
     .map(p => SIN_STOCK.has(claveFoto(p.sku)) ? {...p, stock:0} : p)
+    .map(p => CON_STOCK[p.sku] && !p.stock ? {...p, stock:CON_STOCK[p.sku]} : p)
     .map(p => RENOMBRES[claveFoto(p.sku)] ? {...p, descripcion:RENOMBRES[claveFoto(p.sku)]} : p);
 }
 
@@ -1224,8 +1238,11 @@ function render(){
 
   const conSub = (subsec && defs) ? base.filter(p=>subDe(p,seccion)===subsec) : base;
 
+  // Se busca por palabras sueltas y en cualquier orden: "taladro wadfow" tiene
+  // que encontrar el taladro aunque la marca este al final de la descripcion.
+  const palabras = search ? normalizar(search).split(' ').filter(Boolean) : [];
   const filtered=conSub.filter(p=>{
-    return(!search||p.sku.toLowerCase().includes(search)||p.descripcion.toLowerCase().includes(search))
+    return(!palabras.length||palabras.every(w=>textoBuscable(p).includes(w)))
       &&(!filtroEst||estadoStock(p.stock)===filtroEst)
       &&(!filtroProv||marcaDe(p)===filtroProv);
   });
