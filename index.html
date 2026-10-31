@@ -38,6 +38,12 @@
   .hero .flecha:hover{opacity:1;}
   .hero .flecha.izq{left:2px;}
   .hero .flecha.der{right:2px;}
+  .hero .heroIr{position:absolute;right:12px;bottom:12px;z-index:3;border:1px solid rgba(255,255,255,.55);
+                background:rgba(0,0,0,.42);color:#fff;font:600 13px/1 inherit;letter-spacing:.3px;
+                padding:8px 14px;border-radius:999px;cursor:pointer;opacity:.8;
+                display:flex;align-items:center;gap:6px;transition:opacity .15s,background .15s;}
+  .hero .heroIr:hover{opacity:1;background:rgba(0,0,0,.68);}
+  .hero .heroIr span{font-size:17px;line-height:1;}
   .hero .puntos{position:absolute;left:0;right:0;bottom:10px;display:flex;justify-content:center;gap:7px;z-index:2;}
   .hero .puntos b{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.45);cursor:pointer;
                   transition:background .2s,transform .2s;box-shadow:0 0 3px rgba(0,0,0,.5);}
@@ -417,13 +423,15 @@
   </header>
 
   <div class="hero" id="hero">
-    <img src="hero1.jpg" class="on" alt="Servitec" onerror="this.remove()">
-    <img src="hero7.jpg" alt="Desmalezadora a explosión 2T profesional LD415-9 Lüsqtoff" loading="lazy" onerror="this.remove()">
-    <img src="hero6.jpg" alt="Anticipate al verano: látex 20 L Lüsqtoff y mezclador Omaha 1400 W" loading="lazy" onerror="this.remove()">
-    <img src="hero2.jpg" alt="" loading="lazy" onerror="this.remove()">
-    <img src="hero3.jpg" alt="" loading="lazy" onerror="this.remove()">
+    <img src="hero1.jpg" class="on" alt="Servitec" data-ir="catalogo" onerror="this.remove()">
+    <img src="hero8.jpg" alt="Electrodo y alambre Sideral: stock permanente" loading="lazy" data-ir="seccion:Alambre y electrodos Sideral" onerror="this.remove()">
+    <img src="hero7.jpg" alt="Desmalezadora a explosión 2T profesional LD415-9 Lüsqtoff" loading="lazy" data-ir="buscar:LD415-9" onerror="this.remove()">
+    <img src="hero6.jpg" alt="Anticipate al verano: látex 20 L Lüsqtoff y mezclador Omaha 1400 W" loading="lazy" data-ir="buscar:latex" onerror="this.remove()">
+    <img src="hero2.jpg" alt="Rotomartillos Omaha Iron X 26 y 32 mm" loading="lazy" data-ir="buscar:rotomartillo omaha" onerror="this.remove()">
+    <img src="hero3.jpg" alt="Combo de discos Lüsqtoff para exhibir en tu negocio" loading="lazy" data-ir="buscar:disco lusqtoff" onerror="this.remove()">
     <button class="flecha izq" id="heroPrev" aria-label="Anterior">&#10094;</button>
     <button class="flecha der" id="heroNext" aria-label="Siguiente">&#10095;</button>
+    <button class="heroIr" id="heroIr" type="button">Ir <span>&#8250;</span></button>
     <div class="puntos" id="heroPuntos"></div>
   </div>
 
@@ -1733,13 +1741,29 @@ document.getElementById('vends').addEventListener('click',e=>{
   });
   const puntos=[...cont.children];
   let act=0, timer=null;
+  const btnIr=document.getElementById('heroIr');
+  // Cada cartel dice a donde lleva en su data-ir. Sin data-ir no se muestra el boton.
+  function irA(destino){
+    if(!destino) return;
+    if(destino==='catalogo') return abrirCatalogo();
+    const [que, valor] = [destino.slice(0,destino.indexOf(':')), destino.slice(destino.indexOf(':')+1)];
+    if(que==='seccion') return abrirSeccion(valor);
+    if(que==='buscar'){
+      const caja=document.getElementById('search');
+      caja.value=valor; caja.dispatchEvent(new Event('input'));
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+  }
   function mostrar(i){
     act=(i+imgs.length)%imgs.length;
     imgs.forEach((im,k)=>im.classList.toggle('on',k===act));
     puntos.forEach((b,k)=>b.classList.toggle('on',k===act));
+    if(btnIr) btnIr.style.display = imgs[act].dataset.ir ? 'flex' : 'none';
     reiniciar();
   }
+  if(btnIr) btnIr.addEventListener('click',()=>irA(imgs[act].dataset.ir));
   function reiniciar(){ clearInterval(timer); timer=setInterval(()=>mostrar(act+1),6000); }
+  mostrar(0);
   document.getElementById('heroPrev').addEventListener('click',()=>mostrar(act-1));
   document.getElementById('heroNext').addEventListener('click',()=>mostrar(act+1));
   reiniciar();
