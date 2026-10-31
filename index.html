@@ -1103,16 +1103,17 @@ const LIQUIDACION = [
   { sku:"21187", descripcion:"Juego de 21 herramientas 3/8\" std para mecánico, PRETUL", marca:"pretul" },
 ].map(p=>({...p, proveedor:p.marca, precio:0, stock:0, consultar:true, cat:'Liquidación TRUPER/PRETUL'}));
 
-// Alambre y electrodos Sideral: no estan en RP Sistemas y van sin precio.
-// El codigo que se muestra es la medida, que es como se piden.
+// Alambre y electrodos Sideral: van sin precio, solo "Consultar". Los codigos
+// son los de la lista de reventa del 31/10. Los dos alambres CO2 todavia no
+// tienen codigo: falta saber si son los Random o los de carretel plastico.
 const SIDERAL = [
-  { sku:'2,00 mm',      descripcion:'ELECTRODO 2,00 mm SIDERAL' },
-  { sku:'2,50 mm',      descripcion:'ELECTRODO 2,50 mm SIDERAL' },
-  { sku:'3,25 mm',      descripcion:'ELECTRODO 3,25 mm SIDERAL' },
-  { sku:'0,8 x 5 kg',   descripcion:'ALAMBRE 0,8 mm x 5 kg SIDERAL' },
-  { sku:'0,9 x 5 kg',   descripcion:'ALAMBRE 0,9 mm x 5 kg SIDERAL' },
-  { sku:'0,9 x 15 kg',  descripcion:'ALAMBRE 0,9 mm x 15 kg SIDERAL' },
-  { sku:'1,2 x 15 kg',  descripcion:'ALAMBRE 1,2 mm x 15 kg SIDERAL' },
+  { sku:'smg000554',   descripcion:'ELECTRODO SIDERAL 6013 2,00 mm · por kg' },
+  { sku:'smg000556',   descripcion:'ELECTRODO SIDERAL 6013 2,50 mm · por kg' },
+  { sku:'smg000557',   descripcion:'ELECTRODO SIDERAL 6013 3,25 mm · por kg' },
+  { sku:'smg000375',   descripcion:'ALAMBRE SIDERAL 0,8 mm x 5 kg' },
+  { sku:'smg001268',   descripcion:'ALAMBRE SIDERAL 0,9 mm x 5 kg' },
+  { sku:'0,9 x 15 kg', descripcion:'ALAMBRE SIDERAL CO2 0,9 mm · caja de 15 kg' },
+  { sku:'1,2 x 15 kg', descripcion:'ALAMBRE SIDERAL CO2 1,2 mm · caja de 15 kg' },
 ].map(p=>({...p, proveedor:'sideral', precio:0, stock:0, consultar:true, cat:'Alambre y electrodos Sideral'}));
 
 // Aviso que se muestra arriba del listado de una seccion.
