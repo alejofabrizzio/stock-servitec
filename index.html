@@ -155,6 +155,17 @@
   .nov .nt{font-size:12px;font-weight:700;color:var(--text);line-height:1.3;
            display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
   .nov .nm{font-size:10px;color:var(--muted);margin-top:5px;text-transform:uppercase;letter-spacing:.3px;}
+  /* Liquidacion: misma caja que novedades, con la barra en otro color */
+  .liqui{display:none;margin-bottom:22px;border:1px solid var(--border);border-radius:12px;
+         background:var(--panel);overflow:hidden;}
+  .liqui h2{display:flex;align-items:center;gap:9px;margin:0;padding:12px 15px;font-size:14px;
+            background:#b4261f;color:#fff;letter-spacing:.6px;text-transform:uppercase;}
+  .liqui h2 span{font-size:11px;font-weight:600;opacity:.85;text-transform:none;letter-spacing:0;}
+  .nov .nc{display:inline-block;margin-top:6px;font-size:10px;font-weight:700;letter-spacing:.3px;
+           color:#4555a8;background:#eef2ff;border:1px solid #c9d2f0;border-radius:5px;padding:2px 6px;}
+  /* Aviso al pie del titulo de una seccion (compra minima, condiciones) */
+  .nota-sec{display:none;margin:0 0 14px;padding:10px 13px;border-radius:9px;font-size:12.5px;
+            line-height:1.45;color:var(--text);background:#fff7ed;border:1px solid #f0cfa8;}
 
   /* Pantalla principal: secciones */
   .home{display:none;}
@@ -469,6 +480,8 @@
 
   <div class="subs" id="subs"></div>
 
+  <div class="nota-sec" id="notaSec"></div>
+
   <div class="controls" id="controls">
     <input type="text" id="search" placeholder="Buscar por SKU o descripción...">
     <select id="filterEstado">
@@ -501,6 +514,10 @@
     <div class="novedades" id="novedades">
       <h2>Novedades <span>lo último que llegó</span></h2>
       <div class="nov-fila" id="novFila"></div>
+    </div>
+    <div class="liqui" id="liqui">
+      <h2>Liquidación TRUPER/PRETUL <span>hasta agotar stock · precio a consultar</span></h2>
+      <div class="nov-fila" id="liqFila"></div>
     </div>
     <button class="circ-banner" id="btnCatalogo">
       <span class="ic">📒</span>
@@ -634,6 +651,10 @@ const CATEGORIAS = [
   // Antes que Taller, que se queda con "prensa" a secas: el sargento es de carpinteria.
   ['Sierras y carpintería', /sierra|caladora|inglet|cepillad|cepillo (electrico|rebajador)|garlopa|router|fresadora|combinada \d|biseladora|torno para madera|lijadora de banda|sargento|prensa tipo f/],
   ['Lijadoras y pulidoras', /lijadora|pulidora|orbital|abrillantadora/],
+  // Antes que Soldadura para que quede al lado en la grilla: ningun producto de
+  // RP Sistemas dice "sideral", asi que no le saca nada. Los de la lista SIDERAL
+  // entran igual por su cat fija.
+  ['Alambre y electrodos Sideral', /\bsideral\b/],
   ['Soldadura', /soldador|soldadura|soldar|inverter|electrodo|masc ?p\/ ?sold|careta|\bmig\b|\btig\b|\bmma\b|estanar|oxicorte|antorcha|plasma/],
   // Antes de compresores: el equipo o la pistola de pintar van a Pintura, pero un
   // compresor que incluye pistola en el kit sigue siendo compresor (por eso el ^).
@@ -655,6 +676,7 @@ const CATEGORIAS = [
 
 // Un color por seccion, para que los recuadros se distingan entre si
 const COLORES = {
+  'Alambre y electrodos Sideral':'#8a5a0b',
   'Black Series LQ':'#111111',
   'Combos':'#e30713',
   'Pintura':'#8b3fa8',
@@ -836,6 +858,7 @@ function estadoStock(s){ return s>20?'mucho':s>=10?'medio':s>=1?'poco':'no'; }
 const estadoLabel = {mucho:'Mucho',medio:'Medio',poco:'Poco',no:'Sin stock'};
 // La base guarda la columna como "proveedor"; de cara al usuario se llama marca.
 const marcaLabel = {gamma:'Gamma',lusqtoff:'Lusqtoff',omaha:'Omaha',kld:'KLD',
+  truper:'Truper',pretul:'Pretul',hermex:'Hermex',expert:'Truper Expert',sideral:'Sideral',
                     wadfow:'WADFOW',emtop:'EMTOP',cat:'CAT',orebro:'Orebro',
                     gardenplus:'Garden Plus'};
 
@@ -1050,8 +1073,55 @@ const CON_STOCK = {'WDFWCD3B214': 2};
 const RENOMBRES = {
   'om023edbat20': 'BORDEADORA A BATERIA OMAHA',
 };
+
+// Liquidacion TRUPER/PRETUL: codigos que no estan en RP Sistemas, se venden
+// hasta agotar stock y van sin precio. Nombre y foto salen de la ficha oficial
+// de Truper (truper.com/ficha_merca). Para sacar la seccion, vaciar la lista.
+const LIQUIDACION = [
+  { sku:"11442", descripcion:"Juego de 40 piezas de machuelos y tarrajas, TRUPER", marca:"truper" },
+  { sku:"21824", descripcion:"Llave ajustable (perico) 10\" pavonada, PRETUL", marca:"pretul" },
+  { sku:"14388", descripcion:"Calibrador vernier digital 6\", acero inox, std y mm, TRUPER", marca:"truper" },
+  { sku:"22018", descripcion:"Juego de 22 llaves combinadas std y mm, PRETUL", marca:"pretul" },
+  { sku:"21990", descripcion:"Juego de 11 llaves combinadas std, PRETUL", marca:"pretul" },
+  { sku:"13220", descripcion:"Matraca cuadro 1/2\" telescópica de 19\" con cabeza articulada, TRUPER", marca:"truper" },
+  { sku:"10647", descripcion:"Pistola de aluminio para sopletear, 2 boquillas, TRUPER", marca:"truper" },
+  { sku:"12874", descripcion:"Llave 12\" para plomero, TRUPER", marca:"truper" },
+  { sku:"15315", descripcion:"Lima redonda bastarda 6\" con mango Comfort Grip, TRUPER", marca:"truper" },
+  { sku:"14651", descripcion:"Juego de 6 herramientas caseras, TRUPER", marca:"truper" },
+  { sku:"44441", descripcion:"Bola de arrastre para remolque, 1-7/8\", 2,000 lb, TRUPER", marca:"truper" },
+  { sku:"18344", descripcion:"Correa con ganchos para remolque, 48 mm x 5.8 m, TRUPER", marca:"truper" },
+  { sku:"11443", descripcion:"Juego de 60 piezas de machuelos y tarrajas, TRUPER", marca:"truper" },
+  { sku:"14631", descripcion:"Lámpara LED 1000 lm de trabajo, recargable, TRUPER", marca:"truper" },
+  { sku:"21152", descripcion:"Matraca cuadro 1/2\" cabeza de pera liberación rápida, PRETUL", marca:"pretul" },
+  { sku:"14512", descripcion:"Juego de 5 extractores tipo espiral de tornillos, TRUPER", marca:"truper" },
+  { sku:"49620", descripcion:"Candado rígido tipo U de 20 cm, llave de disco, HERMEX", marca:"hermex" },
+  { sku:"16752", descripcion:"Martillo pulido, 16 oz, uña curva, mango madera, TRUPER", marca:"truper" },
+  { sku:"22101", descripcion:"Juego de herramientas, Comfort Grip, 42 piezas, PRETUL", marca:"pretul" },
+  { sku:"21191", descripcion:"Juego de 21 herramientas 3/8\" mm para mecánico, PRETUL", marca:"pretul" },
+  { sku:"22991", descripcion:"Set de 11 piezas para electricista, TRUPER", marca:"truper" },
+  { sku:"100421", descripcion:"Juego de 5 llaves pulidas de obstrucción en C mm, TRUPER EXPERT", marca:"expert" },
+  { sku:"21187", descripcion:"Juego de 21 herramientas 3/8\" std para mecánico, PRETUL", marca:"pretul" },
+].map(p=>({...p, proveedor:p.marca, precio:0, stock:0, consultar:true, cat:'Liquidación TRUPER/PRETUL'}));
+
+// Alambre y electrodos Sideral: no estan en RP Sistemas y van sin precio.
+// El codigo que se muestra es la medida, que es como se piden.
+const SIDERAL = [
+  { sku:'2,00 mm',      descripcion:'ELECTRODO 2,00 mm SIDERAL' },
+  { sku:'2,50 mm',      descripcion:'ELECTRODO 2,50 mm SIDERAL' },
+  { sku:'3,25 mm',      descripcion:'ELECTRODO 3,25 mm SIDERAL' },
+  { sku:'0,8 x 5 kg',   descripcion:'ALAMBRE 0,8 mm x 5 kg SIDERAL' },
+  { sku:'0,9 x 5 kg',   descripcion:'ALAMBRE 0,9 mm x 5 kg SIDERAL' },
+  { sku:'0,9 x 15 kg',  descripcion:'ALAMBRE 0,9 mm x 15 kg SIDERAL' },
+  { sku:'1,2 x 15 kg',  descripcion:'ALAMBRE 1,2 mm x 15 kg SIDERAL' },
+].map(p=>({...p, proveedor:'sideral', precio:0, stock:0, consultar:true, cat:'Alambre y electrodos Sideral'}));
+
+// Aviso que se muestra arriba del listado de una seccion.
+const NOTAS = {
+  'Alambre y electrodos Sideral':
+    'Compra mínima: 5 kg de electrodo y 15 kg de alambre. El alambre viene en cajas de 15 kg.',
+};
 function getAllProductos(){
-  return [...data.gamma, ...data.lusqtoff, ...data.omaha, ...data.kld, ...PRODUCTOS_MANUALES]
+  return [...data.gamma, ...data.lusqtoff, ...data.omaha, ...data.kld, ...PRODUCTOS_MANUALES, ...LIQUIDACION, ...SIDERAL]
     .filter(p=>{
       const k = claveFoto(p.sku);
       if(EXCLUIDOS.has(k)) return false;
@@ -1084,6 +1154,24 @@ function pintarNovedades(todos){
   }).join('');
 }
 
+function pintarLiquidacion(todos){
+  const caja=document.getElementById('liqui'), fila=document.getElementById('liqFila');
+  if(!caja) return;
+  const porSku={}; todos.forEach(p=>porSku[claveFoto(p.sku)]=p);
+  const items=LIQUIDACION.map(l=>porSku[claveFoto(l.sku)]).filter(Boolean);
+  if(!items.length){ caja.style.display='none'; return; }
+  caja.style.display='block';
+  fila.innerHTML=items.map(p=>{
+    const f=fotoDe(p);
+    return `<button class="nov" data-sku="${p.sku}">
+      ${f?`<img src="${f}" loading="lazy" alt="">`:''}
+      <div class="nt">${p.descripcion.split(',')[0].trim()}</div>
+      <div class="nm">${marcaLabel[marcaDe(p)]||p.proveedor} · cód. ${p.sku}</div>
+      <span class="nc">Consultar</span>
+    </button>`;
+  }).join('');
+}
+
 // Videos del Instagram de Servitec. Para sumar uno, agregar {titulo, url} aca.
 const VIDEOS = [
   {titulo:'Hidrolavadora a batería Lüsqtoff', url:'https://www.instagram.com/reel/DcQ-CAUyiyg/', foto:'vid-hidrolavadora.jpg'},
@@ -1093,18 +1181,21 @@ const VIDEOS = [
 ];
 
 function pintarSecciones(todos){
-  const cuenta = {}, conStock = {};
+  const cuenta = {}, conStock = {}, aPedido = {};
   todos.forEach(p=>{
     categoriasDe(p).forEach(c=>{
       cuenta[c] = (cuenta[c]||0)+1;
       if(p.stock>0) conStock[c] = (conStock[c]||0)+1;
+      if(p.consultar) aPedido[c] = (aPedido[c]||0)+1;
     });
   });
   const orden = [...new Set(CATEGORIAS.map(c=>c[0]).concat(EXTRAS.map(e=>e[0])))].concat([OTROS]);
   const secciones = orden.filter(c=>cuenta[c]).map(c=>`
     <button class="cat" data-cat="${c}" style="--c:${COLORES[c]||'#6b7280'}">
       <div class="cn">${c}</div>
-      <div class="cc"><b>${conStock[c]||0}</b> de ${cuenta[c]} disponibles</div>
+      <div class="cc">${aPedido[c]===cuenta[c]
+        ? `<b>${cuenta[c]}</b> artículos · a pedido`
+        : `<b>${conStock[c]||0}</b> de ${cuenta[c]} disponibles`}</div>
     </button>`).join('');
   document.getElementById('cats').innerHTML = secciones;
 
@@ -1198,7 +1289,8 @@ function render(){
   const enPortada = !seccion && !linea && !catalogo && !search;
   document.getElementById('home').style.display = enPortada?'block':'none';
   document.getElementById('secciones').style.display = enCatalogo?'block':'none';
-  if(!enPortada){ const nv=document.getElementById('novedades'); if(nv) nv.style.display='none'; }
+  if(!enPortada){ const nv=document.getElementById('novedades'); if(nv) nv.style.display='none';
+                  const lq=document.getElementById('liqui'); if(lq) lq.style.display='none'; }
   // Desde cualquier pantalla se puede volver: la barra aparece siempre que no sea la portada
   const lin = linea ? LINEAS.find(l=>l[0]===linea) : null;
   document.getElementById('backBtn').textContent = seccion ? '← Catálogo' : '← Inicio';
@@ -1214,7 +1306,8 @@ function render(){
 
   if(enPortada || enCatalogo){
     document.getElementById('subs').style.display='none';
-    if(enPortada){ pintarLineas(todos); pintarNovedades(todos); }
+    document.getElementById('notaSec').style.display='none';
+    if(enPortada){ pintarLineas(todos); pintarNovedades(todos); pintarLiquidacion(todos); }
     pintarSecciones(todos);
     document.getElementById('table').style.display='none';
     document.getElementById('moreBtn').style.display='none';
@@ -1235,6 +1328,11 @@ function render(){
         hay.map(d=>`<button class="${subsec===d[0]?'on':''}" data-sub="${d[0]}">${d[0]} (${cuenta[d[0]]})</button>`).join('');
     } else { cajaSubs.style.display='none'; subsec=null; }
   } else { cajaSubs.style.display='none'; }
+
+  const cajaNota=document.getElementById('notaSec');
+  const nota = seccion ? NOTAS[seccion] : null;
+  cajaNota.style.display = nota?'block':'none';
+  cajaNota.textContent = nota || '';
 
   const conSub = (subsec && defs) ? base.filter(p=>subDe(p,seccion)===subsec) : base;
 
@@ -1319,6 +1417,15 @@ document.addEventListener('keydown',e=>{
 });
 
 document.getElementById('novFila').addEventListener('click',e=>{
+  const b=e.target.closest('.nov');
+  if(!b) return;
+  seccion=null; limite=PASO;
+  document.getElementById('search').value=b.dataset.sku;
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+
+document.getElementById('liqFila').addEventListener('click',e=>{
   const b=e.target.closest('.nov');
   if(!b) return;
   seccion=null; limite=PASO;
