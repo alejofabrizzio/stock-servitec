@@ -775,7 +775,7 @@ function subDe(p, seccionNombre){
 }
 
 // Destacados de la portada. Para cambiarlos, editar esta lista de SKU.
-const NOVEDADES = ['OM 145.LLB-20P','OM 023.EDBAT-20','LD415-9','GM G2910AR','GM G2911AR','WDFWWB2141','GP2002','GM G211AR','GM G1844AR','LC2550BK-8'];
+const NOVEDADES = ['OM 145.LLB-20P','WDFWAP4R224','GM G211AR','GHL253-8','OM 023.EDBAT-20','LD415-9','GM G2910AR','GM G2911AR','WDFWWB2141','GP2002'];
 
 // --- Fotos de producto (Supabase Storage) -----------------------------
 // El bucket se lee UNA sola vez al arrancar y se arma un indice por SKU.
@@ -1066,6 +1066,7 @@ document.querySelectorAll('.upload-section input[type=file]').forEach(input=>{
 const PRODUCTOS_MANUALES = [
   { sku:'SHL150-9', descripcion:'SET 150 HERRAMIENTAS RACING LUSQTOFF', precio:0, stock:0, proveedor:'lusqtoff', cat:'Taller y máquinas de banco', consultar:true },
   { sku:'GP2002', descripcion:'PINZA UNIVERSAL 8" GARDEN PLUS', precio:3700, stock:0, proveedor:'gardenplus', cat:'Herramientas manuales', consultar:true },
+  { sku:'GHL253-8', descripcion:'GABINETE CON HERRAMIENTAS 253 PIEZAS LUSQTOFF RACING', precio:0, stock:0, proveedor:'lusqtoff', cat:'Taller y máquinas de banco', consultar:true },
 ];
 // SKU que no se muestran aunque vengan en el Excel (se filtran en cada carga).
 const EXCLUIDOS = new Set(['SLXCO42K','OM 034.EA4'].map(x=>claveFoto(x)));
