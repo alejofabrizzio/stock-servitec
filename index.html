@@ -907,6 +907,7 @@ function fmtFecha(iso){
 
 // Catalogo de respaldo publicado con el sitio. Si Supabase no responde
 // (cuota agotada, caida), el stock se muestra igual desde aca.
+const fechaEstatico = {};   // cuando se cargo cada proveedor en stock.json
 let estaticoCargado = null;
 async function cargarEstatico(){
   if(estaticoCargado) return estaticoCargado;
@@ -918,6 +919,7 @@ async function cargarEstatico(){
       const out = {};
       (filas||[]).forEach(f=>{
         out[f.proveedor] = (f.productos||[]).map(x => x.proveedor ? x : {...x, proveedor: f.proveedor});
+        if(f.last_update) fechaEstatico[f.proveedor] = f.last_update;
         if(f.last_update && (!lastUpdate || f.last_update > lastUpdate)) lastUpdate = f.last_update;
       });
       return out;
@@ -938,6 +940,9 @@ async function loadBin(prov){
     const rows = await r.json();
     const row = rows[0];
     if(!row || !(row.productos||[]).length) return;
+    // Supabase manda solo si viene mas fresco que lo publicado con la pagina:
+    // cuando se corto por cuota quedo atrasado y pisaba el stock bueno.
+    if(fechaEstatico[prov] && row.last_update && row.last_update <= fechaEstatico[prov]) return;
     // Algunas filas de la base quedaron guardadas sin la columna proveedor:
     // se completa acá para que la marca y el filtro por marca funcionen.
     data[prov] = ((row && row.productos) || []).map(x => x.proveedor ? x : {...x, proveedor: prov});
