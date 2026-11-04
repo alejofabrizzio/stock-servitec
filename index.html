@@ -790,7 +790,7 @@ function subDe(p, seccionNombre){
 }
 
 // Destacados de la portada. Para cambiarlos, editar esta lista de SKU.
-const NOVEDADES = ['KLI0620BV','KCEAP20P','KGE/3000M','KGE/3000ME','GM G2915AR','GM G3445AR','GM G3446AR','OM 145.LLB-20P','WDFWAP4R224','GM G211AR','GHL253-8','OM 023.EDBAT-20'];
+const NOVEDADES = ['KLI0620BV','KCEAP20P','KGE/3000M','GM G2915AR','GM G3445AR','GM G3446AR','OM 145.LLB-20P','WDFWAP4R224','GM G211AR','GHL253-8','OM 023.EDBAT-20','LD415-9'];
 
 // --- Fotos de producto (Supabase Storage) -----------------------------
 // El bucket se lee UNA sola vez al arrancar y se arma un indice por SKU.
@@ -1094,8 +1094,7 @@ const PRODUCTOS_MANUALES = [
   { sku:'GHL253-8', descripcion:'GABINETE CON HERRAMIENTAS 253 PIEZAS LUSQTOFF RACING', precio:0, stock:0, proveedor:'lusqtoff', cat:'Taller y máquinas de banco', consultar:true },
   // Konan no es uno de los cuatro proveedores del Excel: va cargado a mano.
   { sku:'KGE/3000M', descripcion:'GENERADOR ELECTRICO MONOFASICO 3000W ARRANQUE MANUAL KONAN', precio:345745.95, stock:0, proveedor:'konan', cat:'Generadores y energía' },
-  { sku:'KGE/3000ME', descripcion:'GENERADOR ELECTRICO MONOFASICO 3000W ARRANQUE ELECTRICO KONAN', precio:0, stock:0, proveedor:'konan', cat:'Generadores y energía', consultar:true },
-  { sku:'KLI0620BV', descripcion:'LLAVE DE IMPACTO 1/2\" A BATERIA 20V BRUSHLESS 650 Nm KONAN XPV', precio:0, stock:0, proveedor:'konan', cat:'Taller y máquinas de banco', consultar:true },
+  { sku:'KLI0620BV', descripcion:'LLAVE DE IMPACTO 1/2\" A BATERIA 20V BRUSHLESS 650 Nm KONAN XPV', precio:233000, stock:0, proveedor:'konan', cat:'Taller y máquinas de banco' },
   { sku:'KCEAP20P', descripcion:'CORTADORA DE CESPED A EXPLOSION 175 CC AUTOPROPULSADA KONAN', precio:0, stock:0, proveedor:'konan', cat:'Jardín y exterior', consultar:true },
 ];
 // SKU que no se muestran aunque vengan en el Excel (se filtran en cada carga).
