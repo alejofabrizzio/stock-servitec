@@ -73,6 +73,16 @@
   .tip b{color:var(--negro)}
   .aviso{margin-top:14px;font-size:12.5px;color:var(--gris);text-align:center}
   .texto{margin-top:16px}
+  #puerta{position:fixed;inset:0;z-index:99;background:rgba(244,245,247,.98);
+    display:flex;align-items:center;justify-content:center}
+  #puerta form{background:#fff;border:1px solid var(--linea);border-radius:14px;
+    padding:26px 24px;width:min(340px,90vw);box-shadow:0 18px 50px rgba(0,0,0,.1)}
+  #puerta h2{margin:0 0 4px;font-size:17px}
+  #puerta p{margin:0 0 14px;color:var(--gris);font-size:13px}
+  #puerta input{margin-bottom:10px}
+  #puerta button{width:100%}
+  #puerta .mal[hidden]{display:none}
+  #puerta .mal{display:block;margin-top:10px;color:var(--rojo);font-size:13px;font-weight:700}
   .texto pre{white-space:pre-wrap;background:#fafbfc;border:1px solid var(--linea);
              border-radius:10px;padding:12px;font:13px/1.5 ui-monospace,Menlo,monospace;margin:6px 0 0}
 </style>
@@ -160,24 +170,36 @@
 
 <script>
 /* La misma clave del admin del sitio. Si se entró por ahí, no vuelve a pedirla.
-   No es seguridad de verdad: la clave viaja en la página, igual que en el admin. */
+   No es seguridad de verdad: la clave viaja en la página, igual que en el admin.
+   Va con un formulario propio y no con prompt(), que algunos navegadores
+   bloquean y ahí se cortaba el resto del script. */
 const ADMIN_PASS='servitec2026';
 (function(){
-  try{ if(sessionStorage.getItem('adminServitec')==='1')return; }catch(e){}
-  const c=prompt('Clave de admin');
-  if(c===ADMIN_PASS){ try{sessionStorage.setItem('adminServitec','1')}catch(e){} return; }
-  document.body.innerHTML='<p style="padding:40px;font:16px Arial">Clave incorrecta. '+
-    '<a href="/">Volver al sitio</a></p>';
-  throw new Error('sin acceso');
+  let listo=false;
+  try{ listo=sessionStorage.getItem('adminServitec')==='1'; }catch(e){}
+  if(listo)return;
+  const d=document.createElement('div');
+  d.id='puerta';
+  d.innerHTML='<form><h2>Generador de flyers</h2><p>Entrá con la clave del admin.</p>'+
+    '<input type="password" placeholder="Clave" autofocus>'+
+    '<button type="submit">Entrar</button><span class="mal" hidden>Clave incorrecta</span></form>';
+  const abrir=()=>{ try{sessionStorage.setItem('adminServitec','1')}catch(e){} d.remove(); };
+  d.querySelector('form').onsubmit=e=>{
+    e.preventDefault();
+    if(d.querySelector('input').value===ADMIN_PASS)abrir();
+    else{ d.querySelector('.mal').hidden=false; d.querySelector('input').select(); }
+  };
+  (document.body||document.documentElement).appendChild(d);
 })();
 
 /* ------------------------------------------------------------------ datos */
 const ROJO='#d22d27', NEGRO='#111111', GRIS='#6e747c', BLANCO='#ffffff';
 const COLOR_MARCA={lusqtoff:'#f28c20',omaha:'#c41c16',gamma:'#005faa',kld:'#005faa',
-  wadfow:'#2b4696',emtop:'#e87818',cat:'#fabe0a',orebro:'#1c468c','':ROJO};
+  wadfow:'#2b4696',emtop:'#e87818',cat:'#fabe0a',orebro:'#1c468c',konan:'#c8102e','':ROJO};
 const LOGOS={lusqtoff:'/admin/marketing/logos/lusqtoff.png',omaha:'/admin/marketing/logos/omaha.png',
   gamma:'/admin/marketing/logos/gamma.png',kld:'/admin/marketing/logos/kld.png',
-  emtop:'/admin/marketing/logos/emtop.png'};
+  emtop:'/admin/marketing/logos/emtop.png',
+  konan:'/admin/marketing/logos/konan.svg'};
 const LOGO_CLARO={omaha:true};          // logo blanco: va sobre placa del color de la marca
 const MESES=['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
 const CONTACTO=[['tel','4707-0026'],['mail','ventas@servitecmg.com.ar'],
@@ -203,7 +225,7 @@ function marcaDe(p){
 }
 function limpia(d){
   let t=(d||'').replace(/\s+/g,' ').trim().replace(/^\(oferta\)\s*/i,'');
-  ['LUSQTOFF','OMAHA','GAMMA','WADFOW','EMTOP','KLD','CAT','WDF','EMT']
+  ['LUSQTOFF','OMAHA','GAMMA','WADFOW','EMTOP','KONAN','KLD','CAT','WDF','EMT']
     .forEach(m=>{t=t.replace(new RegExp('\\s*\\b'+m+'\\b','gi'),' ')});
   return t.replace(/\s+/g,' ').trim().replace(/^[·\-|\s]+|[·\-|\s]+$/g,'').toUpperCase();
 }
@@ -877,14 +899,19 @@ $('copiar').onclick=async()=>{
 };
 
 Promise.all([
-  fetch('/fotos/index.json').then(r=>r.json()).catch(()=>[]),
-  fetch('/fotos-hd/index.json').then(r=>r.json()).catch(()=>[]),
+  fetch('/fotos/index.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>[]),
+  fetch('/fotos-hd/index.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>[]),
   cargarPropias()
 ]).then(([a,b])=>{ TIENE=new Set(a.map(cf)); TIENEHD=new Set(b.map(cf)); pintarItems(); pintar(); });
 
-fetch('/stock.json').then(r=>r.json()).then(filas=>{
+/* El stock de los cuatro proveedores, más el catálogo de Konan, que no entra
+   por el Excel de RP: sus productos van sin precio y salen con CONSULTAR. */
+Promise.all([
+  fetch('/stock.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>[]),
+  fetch('/konan.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>[])
+]).then(([stock,konan])=>{
   CAT=[];
-  for(const f of filas) for(const p of (f.productos||[]))
+  for(const f of [...stock,...konan]) for(const p of (f.productos||[]))
     CAT.push({...p,prov:f.proveedor});
   CAT.sort((a,b)=>a.descripcion.localeCompare(b.descripcion));
   $('aviso').textContent=CAT.length+' productos cargados.';
