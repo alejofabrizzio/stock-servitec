@@ -54,9 +54,14 @@
   .lienzo{text-align:center}
   .lienzo p{margin:0 0 8px;font-size:12px;font-weight:700;color:var(--gris);
             text-transform:uppercase;letter-spacing:.5px}
-  canvas{border:1px solid var(--linea);border-radius:10px;background:#fff;max-width:100%;height:auto}
-  #cCanal{width:330px} #cEstado{width:260px}
+  .lienzo img{display:block;border:1px solid var(--linea);border-radius:10px;background:#fff;
+    max-width:100%;height:auto;cursor:grab}
+  #iCanal{width:330px} #iEstado{width:260px}
   .acciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;justify-content:center}
+  .acciones.chicas{margin-top:10px}
+  .acciones.chicas button{padding:7px 11px;font-size:13px}
+  .tip{margin:14px 0 0;font-size:13px;color:var(--gris);text-align:center;line-height:1.5}
+  .tip b{color:var(--negro)}
   .aviso{margin-top:14px;font-size:12.5px;color:var(--gris);text-align:center}
   .texto{margin-top:16px}
   .texto pre{white-space:pre-wrap;background:#fafbfc;border:1px solid var(--linea);
@@ -111,14 +116,34 @@
 
   <div class="vista">
     <div class="lienzos">
-      <div class="lienzo"><p>Para el canal</p><canvas id="cCanal" width="1240" height="1440"></canvas></div>
-      <div class="lienzo"><p>Para el estado</p><canvas id="cEstado" width="1080" height="1920"></canvas></div>
+      <div class="lienzo">
+        <p>Para el canal</p>
+        <canvas id="cCanal" width="1240" height="1440" hidden></canvas>
+        <img id="iCanal" alt="Flyer para el canal" draggable="true">
+        <div class="acciones chicas">
+          <button data-copiar="cCanal">Copiar imagen</button>
+          <button class="sec" data-bajar="cCanal">Descargar</button>
+          <button class="sec" data-abrir="cCanal">Abrir</button>
+        </div>
+      </div>
+      <div class="lienzo">
+        <p>Para el estado</p>
+        <canvas id="cEstado" width="1080" height="1920" hidden></canvas>
+        <img id="iEstado" alt="Flyer para el estado" draggable="true">
+        <div class="acciones chicas">
+          <button data-copiar="cEstado">Copiar imagen</button>
+          <button class="sec" data-bajar="cEstado">Descargar</button>
+          <button class="sec" data-abrir="cEstado">Abrir</button>
+        </div>
+      </div>
     </div>
     <div class="acciones">
-      <button id="bajarCanal">Descargar la del canal</button>
-      <button id="bajarEstado">Descargar la del estado</button>
       <button class="sec" id="copiar">Copiar el texto</button>
     </div>
+    <p class="tip">Con <b>WhatsApp Web abierto</b>, lo más rápido es <b>arrastrar la imagen</b>
+      de acá al chat. También podés tocar <b>Copiar imagen</b> y pegarla con <b>Cmd/Ctrl + V</b>,
+      o hacerle botón derecho y &ldquo;Copiar imagen&rdquo;. En el celular, dejala apretada y
+      guardala.</p>
     <div class="aviso" id="aviso"></div>
     <div class="texto"><h2 style="font-size:13px;color:var(--gris);margin:0">Texto para pegar</h2><pre id="pre"></pre></div>
   </div>
@@ -443,6 +468,7 @@ function recortar(f){
 }
 
 async function encajar(ctx,p,x0,y0,x1,y1){
+  if(!p.sku)return false;                       // todavía no eligieron producto
   let f=await img('/fotos/'+cf(p.sku)+'.jpg');
   if(f)f=recortar(f);
   if(!f){
@@ -620,6 +646,10 @@ async function pintar(){
     const c=$(id), ctx=c.getContext('2d');
     await dibujar(ctx,W,H,st);
   }
+  for(const [c,i] of [['cCanal','iCanal'],['cEstado','iEstado']]){
+    try{ $(i).src=$(c).toDataURL('image/jpeg',0.92); }catch(e){}
+    $(i).alt=(st.items[0]?limpia(st.items[0].descripcion):'Flyer')+' · Servitec MG SRL';
+  }
   $('pre').textContent=textoCanal();
   const sinFoto=st.items.filter(p=>!CACHE['/fotos/'+cf(p.sku)+'.jpg']||false);
   $('aviso').textContent=st.items.some(p=>!(p.precio>0))
@@ -684,18 +714,67 @@ $('limpiar').onclick=()=>{
   pintarItems();pintar();
 };
 
-function bajar(id,nombre){
-  $(id).toBlob(b=>{
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(b);
-    a.download=nombre+'.jpg'; a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
-  },'image/jpeg',0.92);
+const nombreArch=id=>(id==='cCanal'?'canal-':'estado-')+
+  ((st.items[0]?.sku||st.titulo||'flyer').toLowerCase()
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''));
+
+function avisar(btn,txt){
+  const antes=btn.textContent; btn.textContent=txt;
+  setTimeout(()=>btn.textContent=antes,1800);
 }
-const nombreArch=()=>(st.items[0]?.sku||st.titulo||'flyer')
-  .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-$('bajarCanal').onclick=()=>bajar('cCanal','canal-'+nombreArch());
-$('bajarEstado').onclick=()=>bajar('cEstado','estado-'+nombreArch());
+const aBlob=(c,tipo,cal)=>new Promise(r=>c.toBlob(r,tipo,cal));
+
+/* Descarga: el <a> tiene que estar en el documento o Safari no baja nada y
+   deja un archivo sin extensión que después no abre. */
+async function bajar(id,btn){
+  const c=$(id);
+  const b=await aBlob(c,'image/jpeg',0.92);
+  if(!b){ return abrir(id); }
+  const url=URL.createObjectURL(b);
+  const a=document.createElement('a');
+  a.href=url; a.download=nombreArch(id)+'.jpg'; a.rel='noopener';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),15000);
+  if(btn)avisar(btn,'Bajando…');
+}
+
+/* Para WhatsApp Web: copiar la imagen y pegarla en el chat, sin archivos.
+   El portapapeles sólo acepta PNG. En Safari hay que pasarle la promesa
+   adentro del ClipboardItem, si no pierde el gesto del usuario y falla. */
+async function copiarImagen(id,btn){
+  const c=$(id);
+  try{
+    const item=new ClipboardItem({'image/png':aBlob(c,'image/png')});
+    await navigator.clipboard.write([item]);
+    avisar(btn,'¡Copiada! Pegala con Cmd+V');
+  }catch(e){
+    try{
+      const b=await aBlob(c,'image/png');
+      await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);
+      avisar(btn,'¡Copiada! Pegala con Cmd+V');
+    }catch(e2){
+      avisar(btn,'No pude copiar, abrila');
+      abrir(id);
+    }
+  }
+}
+
+/* Abre la imagen sola: sirve para arrastrarla al chat, guardarla con el botón
+   derecho o, en el celular, dejarla apretada y guardarla en Fotos. */
+async function abrir(id){
+  const b=await aBlob($(id),'image/jpeg',0.92);
+  const url=URL.createObjectURL(b);
+  const w=window.open(url,'_blank');
+  if(!w)location.href=url;
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
+}
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  if(b.dataset.copiar)copiarImagen(b.dataset.copiar,b);
+  else if(b.dataset.bajar)bajar(b.dataset.bajar,b);
+  else if(b.dataset.abrir)abrir(b.dataset.abrir);
+});
 $('copiar').onclick=async()=>{
   await navigator.clipboard.writeText(textoCanal());
   $('copiar').textContent='¡Copiado!';
