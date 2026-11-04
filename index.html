@@ -846,6 +846,11 @@ const EXTRAS = [
 // de la suya (sin sacarlos de la original). Ej: la línea black que también va en Construcción.
 const EXTRAS_SKU = {
   'Construcción': new Set(['MDL1500-9','CCL600-9','VNL150-9BK'].map(x=>x.toLowerCase().replace(/[^a-z0-9]/g,''))),
+  // El combo de la ventosa Wadfow queda en Construccion (subseccion Ventosas),
+  // que es donde lo busca el que necesita la herramienta, y aparece tambien en
+  // Combos. La regla de Combos pide que la descripcion empiece con "combo", y
+  // esta empieza con "ventosa", asi que va por SKU.
+  'Combos': new Set(['COMBOV'].map(x=>x.toLowerCase().replace(/[^a-z0-9]/g,''))),
 };
 function categoriasDe(p){
   if(p._cats) return p._cats;
