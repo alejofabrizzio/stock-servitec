@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Generador de flyers · Servitec MG SRL</title>
+<style>
+  :root{
+    --rojo:#d22d27; --negro:#111; --gris:#6e747c; --linea:#e2e5e9;
+    --fondo:#f4f5f7; --panel:#fff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+       background:var(--fondo);color:var(--negro)}
+  header{background:#fff;border-bottom:1px solid var(--linea);padding:14px 20px;
+         display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5}
+  header h1{font-size:17px;margin:0;font-weight:800;letter-spacing:.2px}
+  header h1 span{color:var(--rojo)}
+  header .sub{color:var(--gris);font-size:13px}
+  main{display:grid;grid-template-columns:400px 1fr;gap:20px;padding:20px;align-items:start}
+  @media (max-width:900px){main{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--linea);border-radius:14px;padding:18px}
+  .panel h2{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--gris);
+            margin:0 0 10px}
+  label{display:block;font-size:13px;font-weight:700;margin:12px 0 4px}
+  input,select,textarea{width:100%;padding:9px 11px;border:1px solid var(--linea);
+    border-radius:9px;font:inherit;background:#fff}
+  input:focus,select:focus,textarea:focus{outline:2px solid #f3b4b1;border-color:var(--rojo)}
+  textarea{min-height:76px;resize:vertical}
+  .fila{display:flex;gap:8px}
+  .fila>*{flex:1}
+  button{font:inherit;font-weight:700;border:0;border-radius:9px;padding:10px 14px;
+         background:var(--rojo);color:#fff;cursor:pointer}
+  button.sec{background:#eceef1;color:#2a2d31}
+  button:hover{filter:brightness(1.07)}
+  .items{margin-top:8px;display:flex;flex-direction:column;gap:8px}
+  .item{border:1px solid var(--linea);border-radius:11px;padding:10px;background:#fbfbfc}
+  .item .cab{display:flex;gap:8px;align-items:center;justify-content:space-between}
+  .item .cod{font-weight:800;font-size:13px;color:var(--rojo)}
+  .item .quitar{background:none;color:var(--gris);padding:2px 6px;font-size:17px;line-height:1}
+  .item .desc{font-size:12px;color:var(--gris);margin:4px 0 6px}
+  .item input{padding:6px 8px;font-size:13px}
+  .buscar{position:relative}
+  .sug{position:absolute;z-index:9;left:0;right:0;top:100%;background:#fff;
+       border:1px solid var(--linea);border-radius:10px;max-height:260px;overflow:auto;
+       box-shadow:0 10px 24px rgba(0,0,0,.09)}
+  .sug div{padding:8px 10px;font-size:13px;cursor:pointer;border-bottom:1px solid #f1f2f4}
+  .sug div:hover{background:#fdf0ef}
+  .sug b{color:var(--rojo)}
+  .vista{background:var(--panel);border:1px solid var(--linea);border-radius:14px;padding:18px;
+         position:sticky;top:76px}
+  .lienzos{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
+  .lienzo{text-align:center}
+  .lienzo p{margin:0 0 8px;font-size:12px;font-weight:700;color:var(--gris);
+            text-transform:uppercase;letter-spacing:.5px}
+  canvas{border:1px solid var(--linea);border-radius:10px;background:#fff;max-width:100%;height:auto}
+  #cCanal{width:330px} #cEstado{width:260px}
+  .acciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;justify-content:center}
+  .aviso{margin-top:14px;font-size:12.5px;color:var(--gris);text-align:center}
+  .texto{margin-top:16px}
+  .texto pre{white-space:pre-wrap;background:#fafbfc;border:1px solid var(--linea);
+             border-radius:10px;padding:12px;font:13px/1.5 ui-monospace,Menlo,monospace;margin:6px 0 0}
+</style>
+</head>
+<body>
+<header>
+  <a href="/admin/" style="text-decoration:none;color:inherit;font-weight:700">&larr; Admin</a>
+  <h1>SERVITEC <span>MG SRL</span></h1>
+  <div class="sub">Generador de flyers para estados y canal de WhatsApp</div>
+</header>
+
+<main>
+  <div class="panel">
+    <h2>1 · Qué pieza</h2>
+    <select id="plantilla">
+      <option value="producto">Un producto (ficha completa)</option>
+      <option value="combo">Combo de dos productos</option>
+      <option value="varios">Varios productos (hasta 4)</option>
+      <option value="ingresos">Lista de ingresos (hasta 6)</option>
+      <option value="aviso">Aviso sin productos</option>
+    </select>
+
+    <div id="zonaProductos">
+      <label for="buscar">2 · Buscá el producto por código o nombre</label>
+      <div class="buscar">
+        <input id="buscar" placeholder="AML2200-9, amoladora, motobomba…" autocomplete="off">
+        <div class="sug" id="sug" hidden></div>
+      </div>
+      <div class="items" id="items"></div>
+    </div>
+
+    <div id="zonaTextos">
+      <label for="titulo">Título <span id="tituloNota" style="font-weight:400;color:var(--gris)"></span></label>
+      <input id="titulo" placeholder="Se completa solo con el nombre del producto">
+      <label for="sub">Bajada / medidas</label>
+      <input id="sub" placeholder="710W | 115 MM">
+      <label for="cinta">Cinta de la esquina (opcional)</label>
+      <input id="cinta" placeholder="OFERTA, SUPER COMBO, NUEVO…">
+      <label style="display:flex;align-items:center;gap:8px;margin-top:14px">
+        <input type="checkbox" id="agua" style="width:auto;margin:0"> Marca de agua sobre la foto
+      </label>
+      <label for="ficha">Ficha técnica (una línea por renglón)</label>
+      <textarea id="ficha" placeholder="Potencia: 2200 W&#10;Tensión: 220 V ~ 50 Hz"></textarea>
+    </div>
+
+    <div class="acciones" style="justify-content:flex-start">
+      <button class="sec" id="limpiar">Empezar de cero</button>
+    </div>
+  </div>
+
+  <div class="vista">
+    <div class="lienzos">
+      <div class="lienzo"><p>Para el canal</p><canvas id="cCanal" width="1240" height="1440"></canvas></div>
+      <div class="lienzo"><p>Para el estado</p><canvas id="cEstado" width="1080" height="1920"></canvas></div>
+    </div>
+    <div class="acciones">
+      <button id="bajarCanal">Descargar la del canal</button>
+      <button id="bajarEstado">Descargar la del estado</button>
+      <button class="sec" id="copiar">Copiar el texto</button>
+    </div>
+    <div class="aviso" id="aviso"></div>
+    <div class="texto"><h2 style="font-size:13px;color:var(--gris);margin:0">Texto para pegar</h2><pre id="pre"></pre></div>
+  </div>
+</main>
+
+<script>
+/* La misma clave del admin del sitio. Si se entró por ahí, no vuelve a pedirla.
+   No es seguridad de verdad: la clave viaja en la página, igual que en el admin. */
+const ADMIN_PASS='servitec2026';
+(function(){
+  try{ if(sessionStorage.getItem('adminServitec')==='1')return; }catch(e){}
+  const c=prompt('Clave de admin');
+  if(c===ADMIN_PASS){ try{sessionStorage.setItem('adminServitec','1')}catch(e){} return; }
+  document.body.innerHTML='<p style="padding:40px;font:16px Arial">Clave incorrecta. '+
+    '<a href="/">Volver al sitio</a></p>';
+  throw new Error('sin acceso');
+})();
+
+/* ------------------------------------------------------------------ datos */
+const ROJO='#d22d27', NEGRO='#111111', GRIS='#6e747c', BLANCO='#ffffff';
+const COLOR_MARCA={lusqtoff:'#f28c20',omaha:'#c41c16',gamma:'#005faa',kld:'#005faa',
+  wadfow:'#2b4696',emtop:'#e87818',cat:'#fabe0a',orebro:'#1c468c','':ROJO};
+const LOGOS={lusqtoff:'/admin/marketing/logos/lusqtoff.png',omaha:'/admin/marketing/logos/omaha.png',
+  gamma:'/admin/marketing/logos/gamma.png',kld:'/admin/marketing/logos/kld.png',
+  emtop:'/admin/marketing/logos/emtop.png'};
+const LOGO_CLARO={omaha:true};          // logo blanco: va sobre placa del color de la marca
+const MESES=['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+const CONTACTO=[['tel','4707-0026'],['mail','ventas@servitecmg.com.ar'],
+  ['pin','Don Bosco 2041 (ex 1949) Morón'],['ig','@servitec_mg']];
+const IMPORTANTE='IMPORTANTE: Los precios y descuentos indicados son NETO + IVA por unidad. '+
+  'Válidos hasta agotar stock o próxima actualización de parte del proveedor lo que ocurra '+
+  'primero). No combinables con otras promociones y/o descuentos. Ante cualquier duda, '+
+  'comuníquese con nosotros.';
+const WA='wa.me/5491123174912', WEB='stock-servitec.vercel.app';
+
+const cf=t=>(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+                   .replace(/[^a-z0-9]/g,'');
+let CAT=[], PORSKU={};
+
+function marcaDe(p){
+  const s=cf(p.sku);
+  if(s.startsWith('wdfw'))return'wadfow';
+  if(s.startsWith('emte'))return'emtop';
+  if(s.startsWith('kld'))return'kld';
+  if(s.startsWith('cat'))return'cat';
+  if(p.prov==='omaha'&&/OREBRO/i.test(p.descripcion||''))return'orebro';
+  return p.prov||'';
+}
+function limpia(d){
+  let t=(d||'').replace(/\s+/g,' ').trim().replace(/^\(oferta\)\s*/i,'');
+  ['LUSQTOFF','OMAHA','GAMMA','WADFOW','EMTOP','KLD','CAT','WDF','EMT']
+    .forEach(m=>{t=t.replace(new RegExp('\\s*\\b'+m+'\\b','gi'),' ')});
+  return t.replace(/\s+/g,' ').trim().replace(/^[·\-|\s]+|[·\-|\s]+$/g,'').toUpperCase();
+}
+function partirTitulo(t){
+  t=(t||'').replace(/\s+/g,' ').trim();
+  if(t.includes('|')&&!/\d/.test(t.split('|')[0])){
+    const [a,...b]=t.split('|'); return [a.trim(),b.join('|').trim()];
+  }
+  const pal=t.split(' ');
+  for(let i=1;i<pal.length;i++) if(/\d/.test(pal[i]))
+    return [pal.slice(0,i).join(' '),pal.slice(i).join(' ')];
+  return [t,''];
+}
+const fmt=n=>Math.floor(n).toLocaleString('es-AR');
+const cents=n=>String(Math.round((n-Math.floor(n))*100)).padStart(2,'0');
+
+/* --------------------------------------------------------------- imágenes */
+const CACHE={};
+function img(src){
+  if(CACHE[src])return CACHE[src];
+  const p=new Promise(res=>{
+    const i=new Image();
+    i.onload=()=>res(i); i.onerror=()=>res(null);
+    i.src=src;
+  });
+  CACHE[src]=p; return p;
+}
+
+/* ------------------------------------------------------------ dibujo base */
+function fuente(ctx,px,peso){
+  ctx.font=(peso==='black'?'900 ':peso==='bold'?'bold ':'')+Math.round(px)+
+    'px '+(peso==='black'?'"Arial Black",':'')+'Arial,Helvetica,sans-serif';
+}
+function anchoT(ctx,t){return ctx.measureText(t).width}
+function envolver(ctx,t,w,max){
+  const pal=(t||'').split(' ');let lin=[],act='';
+  for(const p of pal){
+    const pr=(act+' '+p).trim();
+    if(anchoT(ctx,pr)<=w)act=pr;
+    else{ if(act)lin.push(act); act=p; if(lin.length===max)break; }
+  }
+  if(act&&lin.length<max)lin.push(act);
+  return lin.slice(0,max);
+}
+function ajustar(ctx,t,px,w,peso,min){
+  min=min||18;
+  let s=px; fuente(ctx,s,peso);
+  while(anchoT(ctx,t)>w&&s>min){s-=2;fuente(ctx,s,peso)}
+  return s;
+}
+function redondeado(ctx,x,y,w,h,r){
+  r=Math.min(r,w/2,h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+function fondo(ctx,W,H,color){
+  ctx.fillStyle=BLANCO; ctx.fillRect(0,0,W,H);
+  const alto=H*0.30;
+  const g=ctx.createLinearGradient(W,0,W*0.1,alto);
+  g.addColorStop(0,color); g.addColorStop(1,color+'00');
+  ctx.save(); ctx.globalAlpha=1; ctx.fillStyle=g; ctx.fillRect(0,0,W,alto);
+  const g2=ctx.createLinearGradient(0,0,0,alto);
+  g2.addColorStop(0,'#ffffff00'); g2.addColorStop(1,'#ffffff');
+  ctx.fillStyle=g2; ctx.fillRect(0,0,W,alto); ctx.restore();
+  // la trama de puntos de la esquina
+  const x0=W*0.58,y0=H*0.012,x1=W-8,y1=H*0.115,paso=18*(W/1240);
+  ctx.save(); ctx.fillStyle=BLANCO;
+  for(let y=y0;y<y1;y+=paso)for(let x=x0;x<x1;x+=paso){
+    const fx=(x-x0)/(x1-x0), fy=1-(y-y0)/(y1-y0);
+    const k=Math.max(0,Math.min(1,fx*0.8+fy*0.5)), r=5.4*(W/1240)*k;
+    if(r<0.7)continue;
+    ctx.globalAlpha=0.82*k; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
+  }
+  ctx.restore();
+}
+
+async function marcaAgua(ctx,W,H,s){
+  const lg=await img('/admin/marketing/logos/servitec.png'); if(!lg)return;
+  const alto=210*s, cx=W/2, cy=H*0.50;
+  const off=document.createElement('canvas');
+  off.width=lg.width; off.height=lg.height;
+  const o=off.getContext('2d'); o.drawImage(lg,0,0);
+  const d=o.getImageData(0,0,off.width,off.height);
+  for(let i=0;i<d.data.length;i+=4){
+    const claro=(d.data[i]+d.data[i+1]+d.data[i+2])/3>160;
+    d.data[i]=d.data[i+1]=d.data[i+2]=120;
+    d.data[i+3]=claro?26:0;
+  }
+  o.putImageData(d,0,0);
+  const an=alto*off.width/off.height;
+  ctx.drawImage(off,cx-an/2,cy-alto,an,alto);
+  ctx.save(); ctx.globalAlpha=.16; ctx.fillStyle='#787878'; ctx.textAlign='center';
+  fuente(ctx,62*s,'black'); ctx.fillText('SERVITEC MG SRL',cx,cy+62*s);
+  ctx.globalAlpha=.13; fuente(ctx,40*s,''); ctx.fillText('DISTRIBUIDOR',cx,cy+112*s);
+  ctx.restore(); ctx.textAlign='left';
+}
+
+async function encabezado(ctx,W,s,marca){
+  const x=58*s; let y=66*s;
+  ctx.fillStyle=NEGRO; ctx.textBaseline='top';
+  fuente(ctx,42*s,'black'); ctx.fillText('SERVITEC MG SRL',x,y);
+  fuente(ctx,26*s,'black');
+  const hoy=new Date();
+  ctx.fillText(MESES[hoy.getMonth()]+'. '+hoy.getFullYear(),x+2,y+52*s);
+  y+=104*s;
+  const lg=LOGOS[marca]?await img(LOGOS[marca]):null;
+  if(lg){
+    const alto=62*s, an=alto*lg.width/lg.height;
+    if(LOGO_CLARO[marca]){
+      const p=14*s; ctx.fillStyle=COLOR_MARCA[marca]||ROJO;
+      redondeado(ctx,x-p,y-p,an+p*2,alto+p*2,10*s); ctx.fill();
+    }
+    ctx.drawImage(lg,x,y,an,alto);
+    return y+alto+26*s;
+  }
+  if(marca){ ctx.fillStyle=NEGRO; fuente(ctx,52*s,'black');
+    ctx.fillText(marca.toUpperCase(),x,y); return y+78*s; }
+  return y;
+}
+
+function chapita(ctx,x,y,texto,s,px){
+  px=px||36; fuente(ctx,px*s,'black');
+  const w=anchoT(ctx,texto), h=px*s*1.28, pw=20*s;
+  ctx.fillStyle=ROJO; redondeado(ctx,x,y,w+pw*2,h+10*s,8*s); ctx.fill();
+  ctx.fillStyle=BLANCO; ctx.fillText(texto,x+pw,y+7*s);
+  return h+10*s;
+}
+
+function cinta(ctx,W,texto,s){
+  let lineas=texto.toUpperCase().split(' ');
+  if(lineas.length>2)lineas=[lineas.slice(0,-1).join(' '),lineas.slice(-1)[0]];
+  fuente(ctx,50*s,'black');
+  const w=Math.max(...lineas.map(l=>anchoT(ctx,l)))+90*s;
+  const h=(56*lineas.length+56)*s, y0=70*s;
+  ctx.fillStyle=ROJO; redondeado(ctx,W-w,y0,w+40*s,h,28*s); ctx.fill();
+  ctx.fillStyle=BLANCO;
+  lineas.forEach((l,i)=>ctx.fillText(l,W-w+46*s,y0+26*s+i*56*s));
+}
+
+function fichaTecnica(ctx,x,y,lineas,s,ancho){
+  ctx.fillStyle=NEGRO; fuente(ctx,24*s,'bold');
+  ctx.fillText('FICHA TÉCNICA',x,y); y+=32*s;
+  fuente(ctx,21*s,''); ctx.fillStyle='#282a2e';
+  for(const l of lineas){
+    envolver(ctx,l.trim(),ancho-16*s,2).forEach((sub,j)=>{
+      ctx.fillText((j===0?'• ':'  ')+sub,x+(j?14*s:0),y); y+=27*s;
+    });
+  }
+  return y;
+}
+
+function pildora(ctx,W,precio,s,cy){
+  if(!(precio>0)){
+    const t='CONSULTAR PRECIO';
+    const px=ajustar(ctx,t,62*s,W-260*s,'black',30);
+    const w=anchoT(ctx,t), h=px*1.9;
+    ctx.fillStyle='#1c1c1e'; redondeado(ctx,(W-w)/2-50*s,cy,w+100*s,h,h/2); ctx.fill();
+    ctx.fillStyle=BLANCO; ctx.fillText(t,(W-w)/2,cy+(h-px*1.25)/2);
+    return h;
+  }
+  const ent='$'+fmt(precio), cc=cents(precio);
+  const px=ajustar(ctx,ent,104*s,W-360*s,'black',48);
+  fuente(ctx,px,'black');
+  const wEnt=anchoT(ctx,ent);
+  fuente(ctx,px*0.42,'black'); const wC=anchoT(ctx,cc);
+  fuente(ctx,px*0.26,'bold'); const wI=anchoT(ctx,'+IVA');
+  const w=wEnt+14*s+Math.max(wC,wI), h=px*1.75, x0=(W-w)/2-54*s;
+  ctx.fillStyle='#1c1c1e'; redondeado(ctx,x0,cy,w+108*s,h,h/2); ctx.fill();
+  const tx=(W-w)/2;
+  ctx.fillStyle=BLANCO;
+  fuente(ctx,px,'black'); ctx.fillText(ent,tx,cy+(h-px*1.3)/2);
+  fuente(ctx,px*0.42,'black'); ctx.fillText(cc,tx+wEnt+12*s,cy+h*0.20);
+  fuente(ctx,px*0.26,'bold'); ctx.fillText('+IVA',tx+wEnt+12*s,cy+h*0.56);
+  return h;
+}
+
+/* los íconos del pie, dibujados: Arial no trae ninguno */
+function icono(ctx,n,cx,cy,r){
+  const g=r*0.56; ctx.save(); ctx.strokeStyle=ROJO; ctx.fillStyle=ROJO;
+  ctx.lineWidth=Math.max(2,g*0.24); ctx.lineJoin='round'; ctx.lineCap='round';
+  if(n==='tel'){
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(-Math.PI/4);
+    ctx.beginPath(); ctx.roundRect(-g*0.24,-g*0.74,g*0.48,g*1.48,g*0.24); ctx.fill();
+    [-g*0.74,g*0.74].forEach(y=>{
+      ctx.beginPath(); ctx.ellipse(0,y,g*0.60,g*0.34,0,0,7); ctx.fill();
+      ctx.save(); ctx.globalCompositeOperation='destination-out';
+      ctx.beginPath(); ctx.ellipse(0,y,g*0.28,g*0.12,0,0,7); ctx.fill(); ctx.restore();
+    });
+    ctx.restore();
+  }else if(n==='mail'){
+    ctx.beginPath(); ctx.roundRect(cx-g,cy-g*0.72,g*2,g*1.44,g*0.18); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx-g*0.86,cy-g*0.56); ctx.lineTo(cx,cy+g*0.18);
+    ctx.lineTo(cx+g*0.86,cy-g*0.56); ctx.stroke();
+  }else if(n==='pin'){
+    ctx.beginPath(); ctx.arc(cx,cy-g*0.18,g*0.82,Math.PI,0);
+    ctx.lineTo(cx+g*0.46,cy+g*0.34); ctx.lineTo(cx,cy+g*1.1);
+    ctx.lineTo(cx-g*0.46,cy+g*0.34); ctx.closePath(); ctx.fill();
+    ctx.save(); ctx.globalCompositeOperation='destination-out';
+    ctx.beginPath(); ctx.arc(cx,cy-g*0.18,g*0.26,0,7); ctx.fill(); ctx.restore();
+  }else if(n==='ig'){
+    ctx.beginPath(); ctx.roundRect(cx-g,cy-g,g*2,g*2,g*0.36); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx,cy,g*0.42,0,7); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx+g*0.55,cy-g*0.57,g*0.11,0,7); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function pie(ctx,W,H,s){
+  const alto=118*s, y0=H-alto;
+  ctx.fillStyle=ROJO; ctx.fillRect(0,y0,W,alto);
+  let px=25*s, r=17*s, sep=26*s, partes, total;
+  const medir=()=>{ fuente(ctx,px,'bold');
+    partes=CONTACTO.map(([n,t])=>[n,t,anchoT(ctx,t)]);
+    total=partes.reduce((a,[,,w])=>a+w+r*2+10*s,0)+sep*(partes.length-1); };
+  medir(); while(total>W-40*s&&px>14){px--;medir()}
+  let x=(W-total)/2; const cy=y0+34*s;
+  for(const [n,t,w] of partes){
+    ctx.fillStyle=BLANCO; ctx.beginPath(); ctx.arc(x+r,cy,r,0,7); ctx.fill();
+    icono(ctx,n,x+r,cy,r);
+    ctx.fillStyle=BLANCO; fuente(ctx,px,'bold'); ctx.fillText(t,x+r*2+10*s,cy-px*0.60);
+    x+=r*2+10*s+w+sep;
+  }
+  fuente(ctx,14*s,''); ctx.textAlign='center';
+  const lineas=envolver(ctx,IMPORTANTE,W-180*s,2);
+  let yy=y0+66*s;
+  lineas.forEach((l,i)=>{
+    if(i===0){
+      fuente(ctx,14*s,'bold'); const wB=anchoT(ctx,'IMPORTANTE:');
+      fuente(ctx,14*s,''); const wR=anchoT(ctx,l.slice(11));
+      const x0=(W-(wB+wR))/2;
+      ctx.textAlign='left';
+      ctx.fillStyle='#ffe278'; fuente(ctx,14*s,'bold'); ctx.fillText('IMPORTANTE:',x0,yy);
+      ctx.fillStyle='#ffd6d2'; fuente(ctx,14*s,''); ctx.fillText(l.slice(11),x0+wB,yy);
+      ctx.textAlign='center';
+    }else{ ctx.fillStyle='#ffd6d2'; ctx.fillText(l,W/2,yy); }
+    yy+=19*s;
+  });
+  ctx.textAlign='left';
+  return y0;
+}
+
+/* Las fotos del repo vienen con mucho blanco alrededor: si se pegan tal cual,
+   el producto queda chico y la pieza desprolija. Esto recorta ese margen. */
+const RECORTE={};
+function recortar(f){
+  const k=f.src;
+  if(RECORTE[k])return RECORTE[k];
+  const c=document.createElement('canvas');
+  c.width=f.width; c.height=f.height;
+  const o=c.getContext('2d',{willReadFrequently:true});
+  o.drawImage(f,0,0);
+  let d;
+  try{ d=o.getImageData(0,0,c.width,c.height).data; }catch(e){ return (RECORTE[k]=f); }
+  let x0=c.width,y0=c.height,x1=0,y1=0;
+  for(let y=0;y<c.height;y++)for(let x=0;x<c.width;x++){
+    const i=(y*c.width+x)*4;
+    if(d[i+3]>20&&(d[i]<242||d[i+1]<242||d[i+2]<242)){
+      if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y;
+    }
+  }
+  if(x1<=x0||y1<=y0)return (RECORTE[k]=f);
+  const m=Math.round(Math.min(c.width,c.height)*0.012);
+  x0=Math.max(0,x0-m); y0=Math.max(0,y0-m);
+  x1=Math.min(c.width-1,x1+m); y1=Math.min(c.height-1,y1+m);
+  const r=document.createElement('canvas');
+  r.width=x1-x0+1; r.height=y1-y0+1;
+  r.getContext('2d').drawImage(c,x0,y0,r.width,r.height,0,0,r.width,r.height);
+  return (RECORTE[k]=r);
+}
+
+async function encajar(ctx,p,x0,y0,x1,y1){
+  let f=await img('/fotos/'+cf(p.sku)+'.jpg');
+  if(f)f=recortar(f);
+  if(!f){
+    const lg=LOGOS[marcaDe(p)]?await img(LOGOS[marcaDe(p)]):null;
+    if(lg){ const h=(y1-y0)/3, w=h*lg.width/lg.height;
+      ctx.drawImage(lg,x0+(x1-x0-w)/2,y0+(y1-y0-h)/2,w,h); }
+    return false;
+  }
+  const e=Math.min((x1-x0)/f.width,(y1-y0)/f.height);
+  const w=f.width*e, h=f.height*e;
+  ctx.drawImage(f,x0+(x1-x0-w)/2,y0+(y1-y0-h)/2,w,h);
+  return true;
+}
+
+/* el recuadro de las tarjetas: sombra suave, foto sobre gris y pie separado */
+function tarjeta(ctx,x,y,w,h,s){
+  ctx.save();
+  ctx.shadowColor='rgba(17,20,24,.13)'; ctx.shadowBlur=22*s; ctx.shadowOffsetY=7*s;
+  ctx.fillStyle=BLANCO; redondeado(ctx,x,y,w,h,24*s); ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle='#e7eaee'; ctx.lineWidth=2*s;
+  redondeado(ctx,x,y,w,h,24*s); ctx.stroke();
+}
+
+/* -------------------------------------------------------------- plantillas */
+async function dibujar(ctx,W,H,st){
+  const s=W/1240, ps=st.items;
+  const marca=ps.length&&ps.every(p=>marcaDe(p)===marcaDe(ps[0]))?marcaDe(ps[0]):'';
+  ctx.clearRect(0,0,W,H);
+  fondo(ctx,W,H,COLOR_MARCA[marca]||ROJO);
+  const x0=58*s, x1=W-58*s;
+  let y=await encabezado(ctx,W,s,marca);
+  if(st.cinta)cinta(ctx,W,st.cinta,s);
+  const yPie=pie(ctx,W,H,s);
+  ctx.textBaseline='top';
+
+  if(st.plantilla==='producto'){
+    const p=ps[0]||{sku:'',descripcion:'',precio:0};
+    const tit=st.titulo||partirTitulo(limpia(p.descripcion))[0];
+    const sub=st.sub!==undefined&&st.sub!==''?st.sub:partirTitulo(limpia(p.descripcion))[1];
+    const px=ajustar(ctx,tit,80*s,x1-x0,'black',40);
+    ctx.fillStyle=NEGRO;
+    envolver(ctx,tit,x1-x0,2).forEach(l=>{ctx.fillText(l,x0,y); y+=px*1.08});
+    if(sub){ const p2=ajustar(ctx,sub,52*s,x1-x0,'bold',26);
+      ctx.fillStyle=NEGRO; ctx.fillText(sub,x0,y+6*s); y+=p2*1.3; }
+    if(p.sku) y+=chapita(ctx,x0,y+10*s,p.sku,s)+28*s;
+    const altoP=104*s*1.75, yPrecio=yPie-altoP-42*s;
+    const ficha=st.ficha.filter(l=>l.trim());
+    const altoF=ficha.length?(40+27*ficha.length)*s:0;
+    await encajar(ctx,p,x0,y,x1,yPrecio-altoF-(ficha.length?28*s:20*s));
+    if(st.agua)await marcaAgua(ctx,W,H,s);
+    if(ficha.length)fichaTecnica(ctx,x0,yPrecio-altoF-18*s,ficha,s,W*0.9);
+    pildora(ctx,W,p.precio,s,yPrecio);
+
+  }else if(st.plantilla==='combo'){
+    const altoP=104*s*1.75, yPrecio=yPie-altoP-42*s;
+    const libre=yPrecio-y-30*s;
+    for(let i=0;i<Math.min(2,ps.length);i++){
+      const p=ps[i], der=i===1;
+      const [tit,sub]=partirTitulo(limpia(p.descripcion));
+      const px=ajustar(ctx,tit,58*s,(x1-x0)*0.62,'black',30);
+      let yy=y+i*(libre/2);
+      ctx.fillStyle=NEGRO;
+      envolver(ctx,tit+(sub?' '+sub:''),(x1-x0)*0.62,3).forEach(l=>{
+        const w=anchoT(ctx,l); ctx.fillText(l,der?x1-w:x0,yy); yy+=px*1.08;
+        fuente(ctx,px,'black');
+      });
+      fuente(ctx,36*s,'black');
+      const wc=anchoT(ctx,p.sku)+40*s;
+      yy+=chapita(ctx,der?x1-wc:x0,yy+8*s,p.sku,s)+16*s;
+      await encajar(ctx,p,x0,yy,x1,y+(i+1)*(libre/2)-10*s);
+    }
+    if(st.agua)await marcaAgua(ctx,W,H,s);
+    pildora(ctx,W,ps.reduce((a,p)=>a+(p.precio||0),0),s,yPrecio);
+
+  }else if(st.plantilla==='varios'){
+    const tit=(st.titulo||'OFERTAS DE LA SEMANA').toUpperCase();
+    const px=ajustar(ctx,tit,74*s,x1-x0,'black',34);
+    ctx.fillStyle=NEGRO;
+    envolver(ctx,tit,x1-x0,2).forEach(l=>{ctx.fillText(l,x0,y); y+=px*1.1});
+    if(st.sub){ fuente(ctx,28*s,'bold'); ctx.fillStyle=GRIS;
+      envolver(ctx,st.sub,x1-x0,2).forEach(l=>{ctx.fillText(l,x0,y); y+=28*s*1.3}); }
+    y+=14*s;
+    const lista=ps.slice(0,4), cols=lista.length===1?1:2;
+    const filas=Math.ceil(lista.length/cols);
+    const cw=(x1-x0-(cols-1)*22*s)/cols, ch=(yPie-y-24*s-(filas-1)*22*s)/filas;
+    for(let i=0;i<lista.length;i++){
+      const p=lista[i], cx=x0+(i%cols)*(cw+22*s), cy=y+Math.floor(i/cols)*(ch+22*s);
+      tarjeta(ctx,cx,cy,cw,ch,s);
+      // sin recuadro de color detrás de la foto: vienen con fondo blanco y se
+      // les nota el rectángulo
+      const altoT=176*s;
+      await encajar(ctx,p,cx+22*s,cy+22*s,cx+cw-22*s,cy+ch-altoT-4*s);
+      let yt=cy+ch-altoT+14*s;
+      fuente(ctx,27*s,'bold'); ctx.fillStyle=NEGRO;
+      envolver(ctx,limpia(p.descripcion),cw-32*s,2).forEach(l=>{
+        ctx.fillText(l,cx+16*s,yt); yt+=27*s*1.25; });
+      yt=cy+ch-66*s;
+      ctx.strokeStyle='#edeff2'; ctx.lineWidth=2*s;
+      ctx.beginPath(); ctx.moveTo(cx+16*s,yt-10*s); ctx.lineTo(cx+cw-16*s,yt-10*s); ctx.stroke();
+      fuente(ctx,21*s,'bold'); ctx.fillStyle=ROJO; ctx.fillText(p.sku,cx+16*s,yt+12*s);
+      if(p.precio>0){
+        const t='$'+fmt(p.precio), pz=ajustar(ctx,t,44*s,cw*0.55,'black',22);
+        ctx.fillStyle=NEGRO; ctx.fillText(t,cx+cw-16*s-anchoT(ctx,t),yt+2*s);
+      }else{ fuente(ctx,26*s,'black'); ctx.fillStyle=ROJO;
+        ctx.fillText('CONSULTAR',cx+cw-16*s-anchoT(ctx,'CONSULTAR'),yt+6*s); }
+    }
+
+  }else if(st.plantilla==='ingresos'){
+    const tit=(st.titulo||'NUEVOS INGRESOS').toUpperCase();
+    const px=ajustar(ctx,tit,72*s,x1-x0,'black',32);
+    ctx.fillStyle=NEGRO;
+    envolver(ctx,tit,x1-x0,2).forEach(l=>{ctx.fillText(l,x0,y); y+=px*1.1});
+    y+=16*s;
+    const lista=ps.slice(0,6), alto=(yPie-y-24*s)/Math.max(1,lista.length);
+    for(const p of lista){
+      tarjeta(ctx,x0,y+5*s,x1-x0,alto-17*s,s);
+      const lado=Math.min(alto-44*s,200*s), fy=y+(alto-16*s-lado)/2;
+      await encajar(ctx,p,x0+20*s,fy,x0+20*s+lado,fy+lado);
+      const tx=x0+44*s+lado;
+      fuente(ctx,30*s,'bold');
+      const lineas=envolver(ctx,limpia(p.descripcion),x1-tx-24*s,2);
+      const bloque=lineas.length*30*s*1.25+52*s;
+      let yt=y+(alto-16*s-bloque)/2;
+      ctx.fillStyle=NEGRO;
+      lineas.forEach(l=>{ctx.fillText(l,tx,yt); yt+=30*s*1.25});
+      fuente(ctx,22*s,'bold'); ctx.fillStyle=ROJO; ctx.fillText(p.sku,tx,yt+8*s);
+      if(p.precio>0){
+        const t='$'+fmt(p.precio); ajustar(ctx,t,42*s,(x1-tx)*0.5,'black',22);
+        ctx.fillStyle=NEGRO; ctx.fillText(t,x1-24*s-anchoT(ctx,t),yt);
+      }else{ fuente(ctx,26*s,'black'); ctx.fillStyle=ROJO;
+        ctx.fillText('CONSULTAR',x1-24*s-anchoT(ctx,'CONSULTAR'),yt+6*s); }
+      y+=alto;
+    }
+
+  }else{ // aviso
+    const tit=(st.titulo||'').toUpperCase();
+    const px=ajustar(ctx,tit,86*s,x1-x0,'black',40);
+    ctx.fillStyle=NEGRO;
+    envolver(ctx,tit,x1-x0,3).forEach(l=>{ctx.fillText(l,x0,y); y+=px*1.12});
+    if(st.sub){ y+=14*s; fuente(ctx,34*s,''); ctx.fillStyle='#3c4046';
+      envolver(ctx,st.sub,x1-x0,5).forEach(l=>{ctx.fillText(l,x0,y); y+=34*s*1.32}); }
+  }
+}
+
+/* -------------------------------------------------------------------- UI */
+const $=id=>document.getElementById(id);
+const st={plantilla:'producto',items:[],titulo:'',sub:'',cinta:'',ficha:[],agua:false};
+
+function textoCanal(){
+  const L=[];
+  if(st.plantilla==='aviso'){
+    L.push('*'+(st.titulo||'').toUpperCase()+'*');
+    if(st.sub)L.push(st.sub);
+  }else{
+    if(st.cinta)L.push('*'+st.cinta.toUpperCase()+'*');
+    if(st.titulo&&st.plantilla!=='producto')L.push('*'+st.titulo.toUpperCase()+'*');
+    if(st.sub&&st.plantilla!=='producto')L.push(st.sub);
+    for(const p of st.items){
+      const m=marcaDe(p).toUpperCase();
+      const pr=p.precio>0?('$'+fmt(p.precio)+','+cents(p.precio)+' + IVA'):'consultar';
+      L.push('🔧 *'+limpia(p.descripcion)+'*\nCód. '+p.sku+(m?' · '+m:'')+' — '+pr);
+    }
+  }
+  L.push('📲 Consultas y pedidos: '+WA+'\n🧰 Stock completo: '+WEB+
+         '\n📍 Don Bosco 2041 (ex 1949), Morón');
+  return L.join('\n\n');
+}
+
+let pintando=false, otraVez=false;
+async function pintar(){
+  if(pintando){otraVez=true;return}
+  pintando=true;
+  for(const [id,W,H] of [['cCanal',1240,1440],['cEstado',1080,1920]]){
+    const c=$(id), ctx=c.getContext('2d');
+    await dibujar(ctx,W,H,st);
+  }
+  $('pre').textContent=textoCanal();
+  const sinFoto=st.items.filter(p=>!CACHE['/fotos/'+cf(p.sku)+'.jpg']||false);
+  $('aviso').textContent=st.items.some(p=>!(p.precio>0))
+    ? 'Ojo: hay un producto sin precio, sale como CONSULTAR.' : '';
+  pintando=false;
+  if(otraVez){otraVez=false; pintar();}
+}
+
+function pintarItems(){
+  const cont=$('items'); cont.innerHTML='';
+  st.items.forEach((p,i)=>{
+    const d=document.createElement('div'); d.className='item';
+    d.innerHTML='<div class="cab"><span class="cod">'+p.sku+'</span>'+
+      '<button class="quitar" title="Sacar">×</button></div>'+
+      '<div class="desc">'+limpia(p.descripcion)+'</div>'+
+      '<div class="fila"><input class="pr" type="number" step="0.01" value="'+
+      (p.precio||0)+'" title="Precio de lista"></div>';
+    d.querySelector('.quitar').onclick=()=>{st.items.splice(i,1);pintarItems();pintar()};
+    d.querySelector('.pr').oninput=e=>{p.precio=parseFloat(e.target.value)||0;pintar()};
+    cont.appendChild(d);
+  });
+}
+
+function agregar(p){
+  const max={producto:1,combo:2,varios:4,ingresos:6,aviso:0}[st.plantilla];
+  if(st.items.length>=max)st.items.shift();
+  st.items.push({...p});
+  if(st.plantilla==='producto'){
+    const [t,sb]=partirTitulo(limpia(p.descripcion));
+    $('titulo').value=t; $('sub').value=sb; st.titulo=t; st.sub=sb;
+  }
+  pintarItems(); pintar();
+}
+
+$('buscar').addEventListener('input',e=>{
+  const q=cf(e.target.value), caja=$('sug');
+  if(q.length<2){caja.hidden=true;return}
+  const r=CAT.filter(p=>cf(p.sku).includes(q)||cf(p.descripcion).includes(q)).slice(0,25);
+  caja.innerHTML=r.map((p,i)=>'<div data-i="'+CAT.indexOf(p)+'"><b>'+p.sku+'</b> — '+
+    limpia(p.descripcion)+(p.precio>0?' · $'+fmt(p.precio):' · sin precio')+'</div>').join('');
+  caja.hidden=!r.length;
+});
+$('sug').addEventListener('click',e=>{
+  const d=e.target.closest('div[data-i]'); if(!d)return;
+  agregar(CAT[+d.dataset.i]); $('buscar').value=''; $('sug').hidden=true;
+});
+document.addEventListener('click',e=>{ if(!e.target.closest('.buscar'))$('sug').hidden=true; });
+
+$('plantilla').onchange=e=>{
+  st.plantilla=e.target.value;
+  $('zonaProductos').style.display=st.plantilla==='aviso'?'none':'';
+  $('ficha').parentElement.querySelector('label[for=ficha]');
+  pintar();
+};
+['titulo','sub','cinta'].forEach(id=>$(id).oninput=e=>{st[id==='sub'?'sub':id]=e.target.value;pintar()});
+$('ficha').oninput=e=>{st.ficha=e.target.value.split('\n');pintar()};
+$('agua').onchange=e=>{st.agua=e.target.checked;pintar()};
+$('limpiar').onclick=()=>{
+  st.items=[];st.titulo=st.sub=st.cinta='';st.ficha=[];st.agua=false;
+  ['titulo','sub','cinta','ficha','buscar'].forEach(id=>$(id).value='');
+  $('agua').checked=false;
+  pintarItems();pintar();
+};
+
+function bajar(id,nombre){
+  $(id).toBlob(b=>{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(b);
+    a.download=nombre+'.jpg'; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  },'image/jpeg',0.92);
+}
+const nombreArch=()=>(st.items[0]?.sku||st.titulo||'flyer')
+  .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+$('bajarCanal').onclick=()=>bajar('cCanal','canal-'+nombreArch());
+$('bajarEstado').onclick=()=>bajar('cEstado','estado-'+nombreArch());
+$('copiar').onclick=async()=>{
+  await navigator.clipboard.writeText(textoCanal());
+  $('copiar').textContent='¡Copiado!';
+  setTimeout(()=>$('copiar').textContent='Copiar el texto',1600);
+};
+
+fetch('/stock.json').then(r=>r.json()).then(filas=>{
+  CAT=[];
+  for(const f of filas) for(const p of (f.productos||[]))
+    CAT.push({...p,prov:f.proveedor});
+  CAT.sort((a,b)=>a.descripcion.localeCompare(b.descripcion));
+  $('aviso').textContent=CAT.length+' productos cargados.';
+  pintar();
+}).catch(()=>{ $('aviso').textContent='No pude leer el stock.'; pintar(); });
+</script>
+</body>
+</html>

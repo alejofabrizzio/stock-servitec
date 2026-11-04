@@ -67,6 +67,11 @@
                    background:linear-gradient(45deg,#f09433,#dc2743,#bc1888);}
 
   .upload-section{display:none;margin-bottom:18px;}
+  .admin-secs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:12px;}
+  .admin-sec{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;}
+  .admin-sec h3{margin:0 0 6px 0;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+  .admin-sec p{margin:0 0 12px 0;font-size:13px;color:var(--muted);line-height:1.45;}
+  .admin-sec .upload-btn{text-decoration:none;}
   .foto-info{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--accent);
              border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--muted);}
   .foto-info b{color:var(--text);}
@@ -457,6 +462,15 @@
         <h3>KLD</h3>
         <label class="upload-btn">Importar <input type="file" accept=".xls,.xlsx,.csv" data-prov="kld"></label>
         <div class="upload-status" id="status-kld"></div>
+      </div>
+    </div>
+
+    <div class="admin-secs">
+      <div class="admin-sec">
+        <h3>Marketing</h3>
+        <p>Los flyers para los estados y el canal de WhatsApp: se arman con el stock
+           y los precios del día.</p>
+        <a class="upload-btn" href="/admin/marketing/">Generador de flyers</a>
       </div>
     </div>
   </div>
@@ -1569,6 +1583,8 @@ function infoFotos(){
 function checkPw(){
   if(document.getElementById('pwInput').value===ADMIN_PASS){
     isAdmin=true;
+    // queda anotado para las paginas de /admin, que piden la misma clave
+    try{ sessionStorage.setItem('adminServitec','1'); }catch(e){}
     document.getElementById('pwModal').classList.remove('open');
     document.getElementById('uploadSection').style.display='block';
     document.getElementById('adminToggle').textContent='Salir';
