@@ -48,6 +48,15 @@
   .sug div{padding:8px 10px;font-size:13px;cursor:pointer;border-bottom:1px solid #f1f2f4}
   .sug div:hover{background:#fdf0ef}
   .sug b{color:var(--rojo)}
+  .sug .nofoto{color:#b9872a;font-style:normal;font-size:11.5px;background:#fdf4e3;
+    border-radius:5px;padding:1px 6px}
+  .sinfoto{margin-top:8px;border:1.5px dashed #e3c489;background:#fdf8ef;border-radius:9px;
+    padding:9px 10px;font-size:12.5px;color:#8a6a2a;line-height:1.5}
+  .sinfoto.sobre{background:#f6ecd8;border-color:#c79a3f}
+  .sinfoto .elegir{color:var(--rojo);font-weight:700;cursor:pointer;text-decoration:underline}
+  .foto-ok{margin-top:8px;font-size:12.5px;color:#2e7d4f}
+  .foto-ok .borrar{background:none;color:var(--gris);padding:0;font-size:12.5px;
+    text-decoration:underline}
   .vista{background:var(--panel);border:1px solid var(--linea);border-radius:14px;padding:18px;
          position:sticky;top:76px}
   .lienzos{display:flex;gap:18px;flex-wrap:wrap;justify-content:center}
@@ -118,7 +127,7 @@
     <div class="lienzos">
       <div class="lienzo">
         <p>Para el canal</p>
-        <canvas id="cCanal" width="1240" height="1440" hidden></canvas>
+        <canvas id="cCanal" width="2480" height="2880" hidden></canvas>
         <img id="iCanal" alt="Flyer para el canal" draggable="true">
         <div class="acciones chicas">
           <button data-copiar="cCanal">Copiar imagen</button>
@@ -128,7 +137,7 @@
       </div>
       <div class="lienzo">
         <p>Para el estado</p>
-        <canvas id="cEstado" width="1080" height="1920" hidden></canvas>
+        <canvas id="cEstado" width="2160" height="3840" hidden></canvas>
         <img id="iEstado" alt="Flyer para el estado" draggable="true">
         <div class="acciones chicas">
           <button data-copiar="cEstado">Copiar imagen</button>
@@ -210,6 +219,62 @@ function partirTitulo(t){
 }
 const fmt=n=>Math.floor(n).toLocaleString('es-AR');
 const cents=n=>String(Math.round((n-Math.floor(n))*100)).padStart(2,'0');
+
+
+/* ------------------------------------------------- fotos de los productos
+
+   Hay productos sin foto en el repo. Para no tener que salir a buscarlas cada
+   vez, la foto que se pega (Ctrl+V), se arrastra o se elige queda guardada en
+   este navegador y se usa sola la próxima vez que se arme ese código. */
+let TIENE=new Set(), TIENEHD=new Set(), PROPIAS=new Set();
+
+const DB=(()=>{
+  let dbp;
+  const abrir=()=>dbp||(dbp=new Promise((res,rej)=>{
+    const r=indexedDB.open('servitecFlyer',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('fotos');
+    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+  }));
+  const tx=async(modo,fn)=>{
+    const db=await abrir();
+    return new Promise((res,rej)=>{
+      const q=fn(db.transaction('fotos',modo).objectStore('fotos'));
+      q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error);
+    });
+  };
+  return { get:k=>tx('readonly',s=>s.get(k)), set:(k,v)=>tx('readwrite',s=>s.put(v,k)),
+           del:k=>tx('readwrite',s=>s.delete(k)), keys:()=>tx('readonly',s=>s.getAllKeys()) };
+})();
+
+async function cargarPropias(){ try{ PROPIAS=new Set(await DB.keys()); }catch(e){} }
+
+function hayFoto(sku){ const k=cf(sku); return PROPIAS.has(k)||TIENEHD.has(k)||TIENE.has(k); }
+
+/* La foto del producto, de la mejor fuente que haya. */
+async function fuenteFoto(p){
+  const k=cf(p.sku); if(!k)return null;
+  if(PROPIAS.has(k)){ const d=await DB.get(k); if(d)return img(d); }
+  if(TIENEHD.has(k))return img('/fotos-hd/'+k+'.jpg');
+  if(TIENE.has(k))return img('/fotos/'+k+'.jpg');
+  return null;
+}
+
+/* Guarda una foto para ese código: la achica a 1200 px y la deja en el navegador. */
+async function ponerFoto(sku,archivo){
+  if(!archivo||!/^image\//.test(archivo.type)){ alert('Eso no es una imagen.'); return; }
+  const url=URL.createObjectURL(archivo);
+  const im=await new Promise(r=>{ const i=new Image(); i.onload=()=>r(i); i.onerror=()=>r(null); i.src=url; });
+  URL.revokeObjectURL(url);
+  if(!im){ alert('No pude leer esa imagen.'); return; }
+  const max=1200, e=Math.min(1,max/Math.max(im.width,im.height));
+  const c=document.createElement('canvas');
+  c.width=Math.round(im.width*e); c.height=Math.round(im.height*e);
+  c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+  const k=cf(sku);
+  await DB.set(k,c.toDataURL('image/jpeg',0.92));
+  PROPIAS.add(k); delete CACHE[await DB.get(k)];
+  pintarItems(); pintar();
+}
 
 /* --------------------------------------------------------------- imágenes */
 const CACHE={};
@@ -469,7 +534,7 @@ function recortar(f){
 
 async function encajar(ctx,p,x0,y0,x1,y1){
   if(!p.sku)return false;                       // todavía no eligieron producto
-  let f=await img('/fotos/'+cf(p.sku)+'.jpg');
+  let f=await fuenteFoto(p);
   if(f)f=recortar(f);
   if(!f){
     const lg=LOGOS[marcaDe(p)]?await img(LOGOS[marcaDe(p)]):null;
@@ -477,7 +542,8 @@ async function encajar(ctx,p,x0,y0,x1,y1){
       ctx.drawImage(lg,x0+(x1-x0-w)/2,y0+(y1-y0-h)/2,w,h); }
     return false;
   }
-  const e=Math.min((x1-x0)/f.width,(y1-y0)/f.height);
+  const MAXAMP=2.8;   // sobre el lienzo de 2480 px: hasta 1,4x de la foto original
+  const e=Math.min((x1-x0)/f.width,(y1-y0)/f.height,MAXAMP);
   const w=f.width*e, h=f.height*e;
   ctx.drawImage(f,x0+(x1-x0-w)/2,y0+(y1-y0-h)/2,w,h);
   return true;
@@ -642,12 +708,13 @@ let pintando=false, otraVez=false;
 async function pintar(){
   if(pintando){otraVez=true;return}
   pintando=true;
-  for(const [id,W,H] of [['cCanal',1240,1440],['cEstado',1080,1920]]){
+  for(const [id,W,H] of [['cCanal',2480,2880],['cEstado',2160,3840]]){
     const c=$(id), ctx=c.getContext('2d');
+    ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
     await dibujar(ctx,W,H,st);
   }
   for(const [c,i] of [['cCanal','iCanal'],['cEstado','iEstado']]){
-    try{ $(i).src=$(c).toDataURL('image/jpeg',0.92); }catch(e){}
+    try{ $(i).src=$(c).toDataURL('image/jpeg',0.94); }catch(e){}
     $(i).alt=(st.items[0]?limpia(st.items[0].descripcion):'Flyer')+' · Servitec MG SRL';
   }
   $('pre').textContent=textoCanal();
@@ -662,13 +729,30 @@ function pintarItems(){
   const cont=$('items'); cont.innerHTML='';
   st.items.forEach((p,i)=>{
     const d=document.createElement('div'); d.className='item';
+    const k=cf(p.sku), propia=PROPIAS.has(k);
     d.innerHTML='<div class="cab"><span class="cod">'+p.sku+'</span>'+
       '<button class="quitar" title="Sacar">×</button></div>'+
       '<div class="desc">'+limpia(p.descripcion)+'</div>'+
       '<div class="fila"><input class="pr" type="number" step="0.01" value="'+
-      (p.precio||0)+'" title="Precio de lista"></div>';
+      (p.precio||0)+'" title="Precio de lista"></div>'+
+      (hayFoto(p.sku)
+        ? (propia?'<div class="foto-ok">Foto tuya guardada · <button class="borrar">sacarla</button></div>':'')
+        : '<div class="sinfoto" data-sku="'+p.sku+'">Sin foto. Copiá una y pegala con '+
+          '<b>Ctrl/Cmd + V</b>, arrastrala acá o <label class="elegir">elegila'+
+          '<input type="file" accept="image/*" hidden></label></div>');
     d.querySelector('.quitar').onclick=()=>{st.items.splice(i,1);pintarItems();pintar()};
     d.querySelector('.pr').oninput=e=>{p.precio=parseFloat(e.target.value)||0;pintar()};
+    const zona=d.querySelector('.sinfoto');
+    if(zona){
+      zona.querySelector('input').onchange=e=>ponerFoto(p.sku,e.target.files[0]);
+      zona.ondragover=e=>{e.preventDefault();zona.classList.add('sobre')};
+      zona.ondragleave=()=>zona.classList.remove('sobre');
+      zona.ondrop=e=>{e.preventDefault();zona.classList.remove('sobre');
+        const f=e.dataTransfer.files[0]; if(f)ponerFoto(p.sku,f);};
+    }
+    const borrar=d.querySelector('.borrar');
+    if(borrar)borrar.onclick=async()=>{ await DB.del(cf(p.sku)); PROPIAS.delete(cf(p.sku));
+      pintarItems(); pintar(); };
     cont.appendChild(d);
   });
 }
@@ -688,8 +772,9 @@ $('buscar').addEventListener('input',e=>{
   const q=cf(e.target.value), caja=$('sug');
   if(q.length<2){caja.hidden=true;return}
   const r=CAT.filter(p=>cf(p.sku).includes(q)||cf(p.descripcion).includes(q)).slice(0,25);
-  caja.innerHTML=r.map((p,i)=>'<div data-i="'+CAT.indexOf(p)+'"><b>'+p.sku+'</b> — '+
-    limpia(p.descripcion)+(p.precio>0?' · $'+fmt(p.precio):' · sin precio')+'</div>').join('');
+  caja.innerHTML=r.map(p=>'<div data-i="'+CAT.indexOf(p)+'"><b>'+p.sku+'</b> — '+
+    limpia(p.descripcion)+(p.precio>0?' · $'+fmt(p.precio):' · sin precio')+
+    (hayFoto(p.sku)?'':' <i class="nofoto">sin foto</i>')+'</div>').join('');
   caja.hidden=!r.length;
 });
 $('sug').addEventListener('click',e=>{
@@ -697,6 +782,16 @@ $('sug').addEventListener('click',e=>{
   agregar(CAT[+d.dataset.i]); $('buscar').value=''; $('sug').hidden=true;
 });
 document.addEventListener('click',e=>{ if(!e.target.closest('.buscar'))$('sug').hidden=true; });
+
+/* Pegar una imagen con Ctrl+V: va al primer producto de la lista que no tenga foto. */
+document.addEventListener('paste',e=>{
+  const it=[...(e.clipboardData?.items||[])].find(i=>i.type.startsWith('image/'));
+  if(!it)return;
+  const falta=st.items.find(p=>!hayFoto(p.sku));
+  if(!falta){ return; }
+  e.preventDefault();
+  ponerFoto(falta.sku,it.getAsFile());
+});
 
 $('plantilla').onchange=e=>{
   st.plantilla=e.target.value;
@@ -728,7 +823,7 @@ const aBlob=(c,tipo,cal)=>new Promise(r=>c.toBlob(r,tipo,cal));
    deja un archivo sin extensión que después no abre. */
 async function bajar(id,btn){
   const c=$(id);
-  const b=await aBlob(c,'image/jpeg',0.92);
+  const b=await aBlob(c,'image/jpeg',0.94);
   if(!b){ return abrir(id); }
   const url=URL.createObjectURL(b);
   const a=document.createElement('a');
@@ -762,7 +857,7 @@ async function copiarImagen(id,btn){
 /* Abre la imagen sola: sirve para arrastrarla al chat, guardarla con el botón
    derecho o, en el celular, dejarla apretada y guardarla en Fotos. */
 async function abrir(id){
-  const b=await aBlob($(id),'image/jpeg',0.92);
+  const b=await aBlob($(id),'image/jpeg',0.94);
   const url=URL.createObjectURL(b);
   const w=window.open(url,'_blank');
   if(!w)location.href=url;
@@ -780,6 +875,12 @@ $('copiar').onclick=async()=>{
   $('copiar').textContent='¡Copiado!';
   setTimeout(()=>$('copiar').textContent='Copiar el texto',1600);
 };
+
+Promise.all([
+  fetch('/fotos/index.json').then(r=>r.json()).catch(()=>[]),
+  fetch('/fotos-hd/index.json').then(r=>r.json()).catch(()=>[]),
+  cargarPropias()
+]).then(([a,b])=>{ TIENE=new Set(a.map(cf)); TIENEHD=new Set(b.map(cf)); pintarItems(); pintar(); });
 
 fetch('/stock.json').then(r=>r.json()).then(filas=>{
   CAT=[];
