@@ -554,6 +554,37 @@ function recortar(f){
   return (RECORTE[k]=r);
 }
 
+/* Las fotos del repo son de 700 a 1200 px y en la pieza se dibujan al doble o
+   más: estiradas así salen blandas. Esto las agranda una sola vez y les da
+   nitidez (un sharpen 3x3), que es lo que recupera el detalle. */
+const AFILADAS={};
+function agrandar(f,w,h,clave){
+  const k=clave+'|'+Math.round(w)+'x'+Math.round(h);
+  if(AFILADAS[k])return AFILADAS[k];
+  const c=document.createElement('canvas');
+  c.width=Math.round(w); c.height=Math.round(h);
+  const x=c.getContext('2d',{willReadFrequently:true});
+  x.imageSmoothingEnabled=true; x.imageSmoothingQuality='high';
+  x.drawImage(f,0,0,c.width,c.height);
+  try{
+    const W=c.width,H=c.height;
+    const d=x.getImageData(0,0,W,H).data;
+    const out=new Uint8ClampedArray(d);
+    const fz=0.42;                       // más que esto empieza a marcar halos
+    for(let y=1;y<H-1;y++){
+      for(let X=1;X<W-1;X++){
+        const i=(y*W+X)*4;
+        for(let k2=0;k2<3;k2++){
+          const q=i+k2;
+          out[q]=(1+4*fz)*d[q]-fz*(d[q-4]+d[q+4]+d[q-W*4]+d[q+W*4]);
+        }
+      }
+    }
+    x.putImageData(new ImageData(out,W,H),0,0);
+  }catch(e){}
+  AFILADAS[k]=c; return c;
+}
+
 async function encajar(ctx,p,x0,y0,x1,y1){
   if(!p.sku)return false;                       // todavía no eligieron producto
   let f=await fuenteFoto(p);
@@ -564,10 +595,11 @@ async function encajar(ctx,p,x0,y0,x1,y1){
       ctx.drawImage(lg,x0+(x1-x0-w)/2,y0+(y1-y0-h)/2,w,h); }
     return false;
   }
-  const MAXAMP=2.8;   // sobre el lienzo de 2480 px: hasta 1,4x de la foto original
+  const MAXAMP=2.4;   // sobre el lienzo de 2480 px: 1,2x de la foto original
   const e=Math.min((x1-x0)/f.width,(y1-y0)/f.height,MAXAMP);
   const w=f.width*e, h=f.height*e;
-  ctx.drawImage(f,x0+(x1-x0-w)/2,y0+(y1-y0-h)/2,w,h);
+  const dib=e>1.15?agrandar(f,w,h,cf(p.sku)):f;
+  ctx.drawImage(dib,x0+(x1-x0-w)/2,y0+(y1-y0-h)/2,w,h);
   return true;
 }
 
