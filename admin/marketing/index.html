@@ -6,6 +6,14 @@
 <meta name="robots" content="noindex">
 <title>Generador de flyers · Servitec MG SRL</title>
 <style>
+  /* Montserrat es la tipografía de las piezas de Servitec. Va servida desde el
+     repo (no de Google) para que la pieza salga igual aunque no haya internet
+     del lado de Google y para no depender de nadie. Es "variable": un solo
+     archivo con todos los pesos. */
+  @font-face{font-family:'Mont';src:url('fuentes/Montserrat-var.ttf') format('truetype');
+    font-weight:100 900;font-style:normal;font-display:block}
+  @font-face{font-family:'Mont';src:url('fuentes/Montserrat-Italic-var.ttf') format('truetype');
+    font-weight:100 900;font-style:italic;font-display:block}
   :root{
     --rojo:#d22d27; --negro:#111; --gris:#6e747c; --linea:#e2e5e9;
     --fondo:#f4f5f7; --panel:#fff;
@@ -230,15 +238,17 @@ function codigoLindo(sku){
   return (sku||'').replace(/^OM\s*\d+\./i,'').replace(/^OM\s+/i,'')
                   .replace(/^GM\s+/i,'').trim();
 }
-function limpia(d){
+function limpia(d,mayus){
+  if(mayus===undefined)mayus=true;
   let t=(d||'').replace(/\s+/g,' ').trim().replace(/^\(oferta\)\s*/i,'');
   ['LUSQTOFF','OMAHA','GAMMA','WADFOW','EMTOP','KONAN','KLD','CAT','WDF','EMT']
     .forEach(m=>{t=t.replace(new RegExp('\\s*\\b'+m+'\\b','gi'),' ')});
-  return t.replace(/\s+/g,' ').trim().replace(/^[·\-|\s]+|[·\-|\s]+$/g,'').toUpperCase();
+  t=t.replace(/\s+/g,' ').trim().replace(/^[·\-|\s]+|[·\-|\s]+$/g,'');
+  return mayus?t.toUpperCase():t;
 }
 function partirTitulo(t){
   t=(t||'').replace(/\s+/g,' ').trim();
-  if(t.includes('|')&&!/\d/.test(t.split('|')[0])){
+  if(t.includes('|')){
     const [a,...b]=t.split('|'); return [a.trim(),b.join('|').trim()];
   }
   const pal=t.split(' ');
@@ -319,8 +329,9 @@ function img(src){
 
 /* ------------------------------------------------------------ dibujo base */
 function fuente(ctx,px,peso){
-  ctx.font=(peso==='black'?'900 ':peso==='bold'?'bold ':'')+Math.round(px)+
-    'px '+(peso==='black'?'"Arial Black",':'')+'Arial,Helvetica,sans-serif';
+  const w={black:800,bold:700,semi:600,'':500}[peso]??500;
+  const it=peso==='italic';
+  ctx.font=(it?'italic 700 ':w+' ')+Math.round(px)+'px Mont,Arial,sans-serif';
 }
 function anchoT(ctx,t){return ctx.measureText(t).width}
 function envolver(ctx,t,w,max){
@@ -391,10 +402,10 @@ async function marcaAgua(ctx,W,H,s){
 async function encabezado(ctx,W,s,marca){
   const x=58*s; let y=66*s;
   ctx.fillStyle=NEGRO; ctx.textBaseline='top';
-  fuente(ctx,42*s,'black'); ctx.fillText('SERVITEC MG SRL',x,y);
-  fuente(ctx,26*s,'black');
+  fuente(ctx,40*s,'italic'); ctx.fillText('SERVITEC MG SRL',x,y);
+  fuente(ctx,24*s,'italic');
   const hoy=new Date();
-  ctx.fillText(MESES[hoy.getMonth()]+'. '+hoy.getFullYear(),x+2,y+52*s);
+  ctx.fillText(MESES[hoy.getMonth()]+'. '+hoy.getFullYear(),x+2,y+50*s);
   y+=104*s;
   const lg=LOGOS[marca]?await img(LOGOS[marca]):null;
   if(lg){
@@ -634,16 +645,17 @@ async function dibujar(ctx,W,H,st){
 
   if(st.plantilla==='producto'){
     const p=ps[0]||{sku:'',descripcion:'',precio:0};
-    const tit=st.titulo||partirTitulo(limpia(p.descripcion))[0];
-    const sub=st.sub!==undefined&&st.sub!==''?st.sub:partirTitulo(limpia(p.descripcion))[1];
+    const par=partirTitulo(limpia(p.descripcion,false));
+    const tit=(st.titulo||par[0]).toUpperCase();
+    const sub=st.sub!==undefined&&st.sub!==''?st.sub:par[1];
     const px=ajustar(ctx,tit,80*s,x1-x0,'black',40);
     ctx.fillStyle=NEGRO;
     envolver(ctx,tit,x1-x0,2).forEach(l=>{ctx.fillText(l,x0,y); y+=px*1.08});
     if(sub){
       // el subtítulo va siempre bastante más chico que el título: si queda
       // parecido, la pieza se ve rara
-      const tope=Math.min(52*s,px*0.62);
-      const p2=ajustar(ctx,sub,tope,x1-x0,'bold',22);
+      const tope=Math.min(54*s,px*0.68);
+      const p2=ajustar(ctx,sub,tope,x1-x0,'semi',22);
       ctx.fillStyle=NEGRO; ctx.fillText(sub,x0,y+10*s); y+=p2*1.35; }
     if(p.sku) y+=chapita(ctx,x0,y+10*s,p.cod||codigoLindo(p.sku),s)+28*s;
     const altoP=104*s*1.75, yPrecio=yPie-altoP-42*s;
@@ -773,10 +785,16 @@ function textoCanal(){
   return L.join('\n\n');
 }
 
-let pintando=false, otraVez=false;
+let pintando=false, otraVez=false, fuentesListas=false;
 async function pintar(){
   if(pintando){otraVez=true;return}
   pintando=true;
+  if(!fuentesListas){
+    try{ await document.fonts.load('800 40px Mont');
+         await document.fonts.load('italic 700 40px Mont');
+         await document.fonts.ready; }catch(e){}
+    fuentesListas=true;
+  }
   /* 1600 px en el lado largo: el texto sale nítido, WhatsApp no la reescala y
      la foto del producto —que es de 800 px— casi no hay que agrandarla. Más
      grande el texto quedaba perfecto pero la foto se ablandaba. */
@@ -836,8 +854,9 @@ function agregar(p){
   if(st.items.length>=max)st.items.shift();
   st.items.push({...p, cod:codigoLindo(p.sku)});
   if(st.plantilla==='producto'){
-    const [t,sb]=partirTitulo(limpia(p.descripcion));
-    $('titulo').value=t; $('sub').value=sb; st.titulo=t; st.sub=sb;
+    const [t,sb]=partirTitulo(limpia(p.descripcion,false));
+    $('titulo').value=t.toUpperCase(); $('sub').value=sb;
+    st.titulo=t.toUpperCase(); st.sub=sb;
   }
   pintarItems(); pintar();
 }
