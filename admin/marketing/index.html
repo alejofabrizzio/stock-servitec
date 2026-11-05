@@ -15,7 +15,7 @@
   @font-face{font-family:'Mont';src:url('fuentes/Montserrat-Italic-var.ttf') format('truetype');
     font-weight:100 900;font-style:italic;font-display:block}
   :root{
-    --rojo:#d22d27; --negro:#111; --gris:#6e747c; --linea:#e2e5e9;
+    --rojo:#b21418; --negro:#0b0d10; --gris:#4a5058; --linea:#e2e5e9;
     --fondo:#f4f5f7; --panel:#fff;
   }
   *{box-sizing:border-box}
@@ -228,9 +228,18 @@ const ADMIN_PASS='servitec2026';
 })();
 
 /* ------------------------------------------------------------------ datos */
-const ROJO='#d22d27', NEGRO='#111111', GRIS='#6e747c', BLANCO='#ffffff';
-const COLOR_MARCA={lusqtoff:'#f28c20',omaha:'#c41c16',gamma:'#005faa',kld:'#005faa',
-  wadfow:'#2b4696',emtop:'#e87818',cat:'#fabe0a',orebro:'#1c468c',konan:'#c8102e','':ROJO};
+const ROJO='#b21418', NEGRO='#090b0e', GRIS='#4a5058', BLANCO='#ffffff';
+const TINTA='#0a0c0f', ROJO_FINO='#ffe7e4';
+const COLOR_MARCA={lusqtoff:'#dd650a',omaha:'#a01012',gamma:'#003e7e',kld:'#003e7e',
+  wadfow:'#182d70',emtop:'#c85808',cat:'#e0a000',orebro:'#10306c',konan:'#a40a24','':ROJO};
+/* el mismo color llevado al fondo: la esquina del degradado y el velo del piso */
+function hondo(hex,k){
+  k=k===undefined?0.42:k;
+  const n=parseInt(hex.slice(1),16);
+  const r=Math.round(((n>>16)&255)*(1-k)), g=Math.round(((n>>8)&255)*(1-k)),
+        b=Math.round((n&255)*(1-k));
+  return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+}
 const LOGOS={lusqtoff:'/admin/marketing/logos/lusqtoff.png',omaha:'/admin/marketing/logos/omaha.png',
   gamma:'/admin/marketing/logos/gamma.png',kld:'/admin/marketing/logos/kld.png',
   emtop:'/admin/marketing/logos/emtop.png',
@@ -356,7 +365,7 @@ function img(src){
 
 /* ------------------------------------------------------------ dibujo base */
 function fuente(ctx,px,peso){
-  const w={black:800,bold:700,semi:600,'':500}[peso]??500;
+  const w={black:900,bold:800,semi:600,'':500}[peso]??500;
   const it=peso==='italic';
   ctx.font=(it?'italic 700 ':w+' ')+Math.round(px)+'px Mont,Arial,sans-serif';
 }
@@ -398,9 +407,15 @@ function redondeado(ctx,x,y,w,h,r){
 
 function fondo(ctx,W,H,color){
   ctx.fillStyle=BLANCO; ctx.fillRect(0,0,W,H);
-  const alto=H*0.30;
+  // el velo del piso: sin esto la mitad de abajo queda blanca y plana
+  const hp=hondo(color,0.30), y0p=H*0.46;
+  const gp=ctx.createLinearGradient(0,y0p,0,H);
+  gp.addColorStop(0,hp+'00'); gp.addColorStop(1,hp+'22');
+  ctx.fillStyle=gp; ctx.fillRect(0,y0p,W,H-y0p);
+  const alto=H*0.34;
   const g=ctx.createLinearGradient(W,0,W*0.1,alto);
-  g.addColorStop(0,color+'cc'); g.addColorStop(1,color+'00');
+  g.addColorStop(0,hondo(color,0.40)); g.addColorStop(0.45,color);
+  g.addColorStop(1,color+'00');
   ctx.save(); ctx.globalAlpha=1; ctx.fillStyle=g; ctx.fillRect(0,0,W,alto);
   const g2=ctx.createLinearGradient(0,0,0,alto);
   g2.addColorStop(0,'#ffffff00'); g2.addColorStop(1,'#ffffff');
@@ -413,8 +428,22 @@ function fondo(ctx,W,H,color){
     const fx=(x-x0)/(x1-x0), fy=1-(y-y0)/(y1-y0);
     const k=Math.max(0,Math.min(1,fx*0.8+fy*0.5)), r=3.6*(W/1240)*k;
     if(r<0.5)continue;
-    ctx.globalAlpha=0.59*k; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
+    ctx.globalAlpha=0.80*k; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
   }
+  ctx.restore();
+  vineta(ctx,W,H);
+}
+
+/* los costados apenas cerrados: le dan volumen a la pieza */
+function vineta(ctx,W,H){
+  const a=W*0.16;
+  ctx.save();
+  let g=ctx.createLinearGradient(0,0,a,0);
+  g.addColorStop(0,'rgba(12,16,22,0.10)'); g.addColorStop(1,'rgba(12,16,22,0)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,a,H);
+  g=ctx.createLinearGradient(W,0,W-a,0);
+  g.addColorStop(0,'rgba(12,16,22,0.10)'); g.addColorStop(1,'rgba(12,16,22,0)');
+  ctx.fillStyle=g; ctx.fillRect(W-a,0,a,H);
   ctx.restore();
 }
 
@@ -442,8 +471,8 @@ async function marcaAgua(ctx,W,H,s){
 async function encabezado(ctx,W,s,marca){
   const x=58*s; let y=66*s;
   ctx.fillStyle=NEGRO; ctx.textBaseline='top';
-  fuente(ctx,40*s,'italic'); ctx.fillText('SERVITEC MG SRL',x,y);
-  fuente(ctx,24*s,'italic');
+  fuente(ctx,42*s,'italic'); ctx.fillText('SERVITEC MG SRL',x,y);
+  fuente(ctx,25*s,'italic');
   const hoy=new Date();
   ctx.fillText(MESES[hoy.getMonth()]+'. '+hoy.getFullYear(),x+2,y+50*s);
   y+=104*s;
@@ -499,12 +528,12 @@ function cinta(ctx,W,texto,s){
 }
 
 function fichaTecnica(ctx,x,y,lineas,s,ancho){
-  ctx.fillStyle=NEGRO; fuente(ctx,24*s,'bold');
-  ctx.fillText('FICHA TÉCNICA',x,y); y+=32*s;
-  fuente(ctx,21*s,''); ctx.fillStyle='#282a2e';
+  ctx.fillStyle=NEGRO; fuente(ctx,25*s,'black');
+  ctx.fillText('FICHA TÉCNICA',x,y); y+=33*s;
+  fuente(ctx,22*s,'semi'); ctx.fillStyle='#1a1d22';
   for(const l of lineas){
     envolver(ctx,l.trim(),ancho-16*s,2).forEach((sub,j)=>{
-      ctx.fillText((j===0?'• ':'  ')+sub,x+(j?14*s:0),y); y+=27*s;
+      ctx.fillText((j===0?'• ':'  ')+sub,x+(j?14*s:0),y); y+=28*s;
     });
   }
   return y;
@@ -515,7 +544,7 @@ function pildora(ctx,W,precio,s,cy){
     const t='CONSULTAR PRECIO';
     const px=ajustar(ctx,t,62*s,W-260*s,'black',30);
     const w=anchoT(ctx,t), h=px*1.9;
-    ctx.fillStyle='#1c1c1e'; redondeado(ctx,(W-w)/2-50*s,cy,w+100*s,h,h/2); ctx.fill();
+    ctx.fillStyle=TINTA; redondeado(ctx,(W-w)/2-50*s,cy,w+100*s,h,h/2); ctx.fill();
     ctx.fillStyle=BLANCO; ctx.fillText(t,(W-w)/2,cy+(h-px*1.25)/2);
     return h;
   }
@@ -526,7 +555,7 @@ function pildora(ctx,W,precio,s,cy){
   fuente(ctx,px*0.42,'black'); const wC=anchoT(ctx,cc);
   fuente(ctx,px*0.26,'bold'); const wI=anchoT(ctx,'+IVA');
   const w=wEnt+14*s+Math.max(wC,wI), h=px*1.75, x0=(W-w)/2-54*s;
-  ctx.fillStyle='#1c1c1e'; redondeado(ctx,x0,cy,w+108*s,h,h/2); ctx.fill();
+  ctx.fillStyle=TINTA; redondeado(ctx,x0,cy,w+108*s,h,h/2); ctx.fill();
   const tx=(W-w)/2;
   ctx.fillStyle=BLANCO;
   fuente(ctx,px,'black'); ctx.fillText(ent,tx,cy+(h-px*1.3)/2);
@@ -569,8 +598,8 @@ function icono(ctx,n,cx,cy,r){
 function pie(ctx,W,H,s){
   const alto=118*s, y0=H-alto;
   ctx.fillStyle=ROJO; ctx.fillRect(0,y0,W,alto);
-  let px=25*s, r=17*s, sep=26*s, partes, total;
-  const medir=()=>{ fuente(ctx,px,'bold');
+  let px=26*s, r=17*s, sep=26*s, partes, total;
+  const medir=()=>{ fuente(ctx,px,'black');
     partes=CONTACTO.map(([n,t])=>[n,t,anchoT(ctx,t)]);
     total=partes.reduce((a,[,,w])=>a+w+r*2+10*s,0)+sep*(partes.length-1); };
   medir(); while(total>W-40*s&&px>14){px--;medir()}
@@ -578,22 +607,22 @@ function pie(ctx,W,H,s){
   for(const [n,t,w] of partes){
     ctx.fillStyle=BLANCO; ctx.beginPath(); ctx.arc(x+r,cy,r,0,7); ctx.fill();
     icono(ctx,n,x+r,cy,r);
-    ctx.fillStyle=BLANCO; fuente(ctx,px,'bold'); ctx.fillText(t,x+r*2+10*s,cy-px*0.60);
+    ctx.fillStyle=BLANCO; fuente(ctx,px,'black'); ctx.fillText(t,x+r*2+10*s,cy-px*0.60);
     x+=r*2+10*s+w+sep;
   }
-  fuente(ctx,14*s,''); ctx.textAlign='center';
+  fuente(ctx,14*s,'semi'); ctx.textAlign='center';
   const lineas=envolver(ctx,IMPORTANTE,W-180*s,2);
   let yy=y0+66*s;
   lineas.forEach((l,i)=>{
     if(i===0){
-      fuente(ctx,14*s,'bold'); const wB=anchoT(ctx,'IMPORTANTE:');
-      fuente(ctx,14*s,''); const wR=anchoT(ctx,l.slice(11));
+      fuente(ctx,14*s,'black'); const wB=anchoT(ctx,'IMPORTANTE:');
+      fuente(ctx,14*s,'semi'); const wR=anchoT(ctx,l.slice(11));
       const x0=(W-(wB+wR))/2;
       ctx.textAlign='left';
-      ctx.fillStyle='#ffe278'; fuente(ctx,14*s,'bold'); ctx.fillText('IMPORTANTE:',x0,yy);
-      ctx.fillStyle='#ffd6d2'; fuente(ctx,14*s,''); ctx.fillText(l.slice(11),x0+wB,yy);
+      ctx.fillStyle='#ffe278'; fuente(ctx,14*s,'black'); ctx.fillText('IMPORTANTE:',x0,yy);
+      ctx.fillStyle=ROJO_FINO; fuente(ctx,14*s,'semi'); ctx.fillText(l.slice(11),x0+wB,yy);
       ctx.textAlign='center';
-    }else{ ctx.fillStyle='#ffd6d2'; ctx.fillText(l,W/2,yy); }
+    }else{ ctx.fillStyle=ROJO_FINO; ctx.fillText(l,W/2,yy); }
     yy+=19*s;
   });
   ctx.textAlign='left';
@@ -612,10 +641,17 @@ function recortar(f){
   o.drawImage(f,0,0);
   let d;
   try{ d=o.getImageData(0,0,c.width,c.height).data; }catch(e){ return (RECORTE[k]=f); }
+  // ¿la foto viene sobre negro en vez de blanco? se mira el marco, no el medio
+  let sum=0,n=0;
+  const mira=(x,y)=>{const i=(y*c.width+x)*4; sum+=(d[i]+d[i+1]+d[i+2])/3; n++;};
+  for(let x=0;x<c.width;x+=Math.max(1,Math.floor(c.width/60))){mira(x,0);mira(x,c.height-1);}
+  for(let y=0;y<c.height;y+=Math.max(1,Math.floor(c.height/60))){mira(0,y);mira(c.width-1,y);}
+  const oscuro=n>0&&sum/n<55;
   let x0=c.width,y0=c.height,x1=0,y1=0;
   for(let y=0;y<c.height;y++)for(let x=0;x<c.width;x++){
     const i=(y*c.width+x)*4;
-    if(d[i+3]>20&&(d[i]<242||d[i+1]<242||d[i+2]<242)){
+    const m=(d[i]+d[i+1]+d[i+2])/3;
+    if(d[i+3]>20&&(oscuro?m>=26:m<242)){
       if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y;
     }
   }
@@ -633,7 +669,11 @@ function recortar(f){
     const im=rx.getImageData(0,0,r.width,r.height), q=im.data;
     for(let i=0;i<q.length;i+=4){
       const m=(q[i]+q[i+1]+q[i+2])/3;
-      if(m>242) q[i+3]=0;
+      if(oscuro){
+        if(m<26) q[i+3]=0;
+        else if(m<52) q[i+3]=Math.min(q[i+3],Math.round((m-26)*10));
+      }
+      else if(m>242) q[i+3]=0;
       else if(m>225) q[i+3]=Math.min(q[i+3],Math.round((242-m)*14));
     }
     rx.putImageData(im,0,0);
@@ -725,20 +765,20 @@ async function dibujar(ctx,W,H,st){
     const par=partirTitulo(limpia(p.descripcion,false));
     const tit=(st.titulo||par[0]).toUpperCase();
     const sub=st.sub!==undefined&&st.sub!==''?st.sub:par[1];
-    const px=ajustarLineas(ctx,tit,92*s,x1-x0,'black',2,44);
+    const px=ajustarLineas(ctx,tit,100*s,x1-x0,'black',2,50);
     fuente(ctx,px,'black');
     ctx.fillStyle=NEGRO;
     envolver(ctx,tit,x1-x0,2).forEach(l=>{ctx.fillText(l,x0,y); y+=px*1.08; fuente(ctx,px,'black');});
     if(sub){
       // el subtítulo va siempre bastante más chico que el título: si queda
       // parecido, la pieza se ve rara
-      const tope=Math.min(54*s,px*0.68);
-      const p2=ajustar(ctx,sub,tope,x1-x0,'semi',22);
+      const tope=Math.min(56*s,px*0.70);
+      const p2=ajustar(ctx,sub,tope,x1-x0,'bold',22);
       ctx.fillStyle=NEGRO; ctx.fillText(sub,x0,y+10*s); y+=p2*1.35; }
     if(p.sku) y+=chapitaBorde(ctx,y+10*s,p.cod||codigoLindo(p.sku),s,x0)+26*s;
     const altoP=104*s*1.75, yPrecio=yPie-altoP-42*s;
     const ficha=st.ficha.filter(l=>l.trim());
-    const altoF=ficha.length?(40+27*ficha.length)*s:0;
+    const altoF=ficha.length?(41+28*ficha.length)*s:0;
     const pisoY=yPrecio-altoF-(ficha.length?28*s:20*s);
     sombraPiso(ctx,W/2,pisoY-10*s,(x1-x0)*0.52,s);
     await encajar(ctx,p,x0,y,x1,pisoY);
@@ -773,7 +813,7 @@ async function dibujar(ctx,W,H,st){
     const px=ajustar(ctx,tit,74*s,x1-x0,'black',34);
     ctx.fillStyle=NEGRO;
     envolver(ctx,tit,x1-x0,2).forEach(l=>{ctx.fillText(l,x0,y); y+=px*1.1});
-    if(st.sub){ fuente(ctx,28*s,'bold'); ctx.fillStyle=GRIS;
+    if(st.sub){ fuente(ctx,28*s,'semi'); ctx.fillStyle=GRIS;
       envolver(ctx,st.sub,x1-x0,2).forEach(l=>{ctx.fillText(l,x0,y); y+=28*s*1.3}); }
     y+=14*s;
     const lista=ps.slice(0,4), cols=lista.length===1?1:2;
@@ -787,13 +827,13 @@ async function dibujar(ctx,W,H,st){
       const altoT=176*s;
       await encajar(ctx,p,cx+22*s,cy+22*s,cx+cw-22*s,cy+ch-altoT-4*s);
       let yt=cy+ch-altoT+14*s;
-      fuente(ctx,27*s,'bold'); ctx.fillStyle=NEGRO;
+      fuente(ctx,27*s,'black'); ctx.fillStyle=NEGRO;
       envolver(ctx,limpia(p.descripcion),cw-32*s,2).forEach(l=>{
         ctx.fillText(l,cx+16*s,yt); yt+=27*s*1.25; });
       yt=cy+ch-66*s;
       ctx.strokeStyle='#edeff2'; ctx.lineWidth=2*s;
       ctx.beginPath(); ctx.moveTo(cx+16*s,yt-10*s); ctx.lineTo(cx+cw-16*s,yt-10*s); ctx.stroke();
-      fuente(ctx,21*s,'bold'); ctx.fillStyle=ROJO;
+      fuente(ctx,21*s,'black'); ctx.fillStyle=ROJO;
       ctx.fillText(p.cod||codigoLindo(p.sku),cx+16*s,yt+12*s);
       if(p.precio>0){
         const t='$'+fmt(p.precio), pz=ajustar(ctx,t,44*s,cw*0.55,'black',22);
@@ -814,13 +854,13 @@ async function dibujar(ctx,W,H,st){
       const lado=Math.min(alto-44*s,200*s), fy=y+(alto-16*s-lado)/2;
       await encajar(ctx,p,x0+20*s,fy,x0+20*s+lado,fy+lado);
       const tx=x0+44*s+lado;
-      fuente(ctx,30*s,'bold');
+      fuente(ctx,30*s,'black');
       const lineas=envolver(ctx,limpia(p.descripcion),x1-tx-24*s,2);
       const bloque=lineas.length*30*s*1.25+52*s;
       let yt=y+(alto-16*s-bloque)/2;
       ctx.fillStyle=NEGRO;
       lineas.forEach(l=>{ctx.fillText(l,tx,yt); yt+=30*s*1.25});
-      fuente(ctx,22*s,'bold'); ctx.fillStyle=ROJO;
+      fuente(ctx,22*s,'black'); ctx.fillStyle=ROJO;
       ctx.fillText(p.cod||codigoLindo(p.sku),tx,yt+8*s);
       if(p.precio>0){
         const t='$'+fmt(p.precio); ajustar(ctx,t,42*s,(x1-tx)*0.5,'black',22);
