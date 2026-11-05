@@ -472,6 +472,17 @@ function chapita(ctx,x,y,texto,s,px){
 
 /* La bandera roja de la esquina: sale del borde derecho y termina en punta
    hacia la izquierda, como en las piezas de Servitec. */
+/* La chapita del código va pegada al borde izquierdo y sin esquinas de ese
+   lado, como en las piezas de Servitec. */
+function chapitaBorde(ctx,y,texto,s,margen,px){
+  px=px||36; fuente(ctx,px*s,'black');
+  const w=anchoT(ctx,texto), h=px*s*1.28+10*s;
+  ctx.fillStyle=ROJO;
+  redondeado(ctx,-30*s,y,margen+w+22*s+30*s,h,9*s); ctx.fill();
+  ctx.fillStyle=BLANCO; ctx.fillText(texto,margen,y+7*s);
+  return h;
+}
+
 function cinta(ctx,W,texto,s){
   let lineas=texto.toUpperCase().split(' ');
   if(lineas.length>2)lineas=[lineas.slice(0,-1).join(' '),lineas.slice(-1)[0]];
@@ -614,7 +625,19 @@ function recortar(f){
   x1=Math.min(c.width-1,x1+m); y1=Math.min(c.height-1,y1+m);
   const r=document.createElement('canvas');
   r.width=x1-x0+1; r.height=y1-y0+1;
-  r.getContext('2d').drawImage(c,x0,y0,r.width,r.height,0,0,r.width,r.height);
+  const rx=r.getContext('2d',{willReadFrequently:true});
+  rx.drawImage(c,x0,y0,r.width,r.height,0,0,r.width,r.height);
+  // y el blanco pasa a transparente: apoyada sobre el degradado de la pieza,
+  // la foto con su fondo blanco deja ver el rectángulo
+  try{
+    const im=rx.getImageData(0,0,r.width,r.height), q=im.data;
+    for(let i=0;i<q.length;i+=4){
+      const m=(q[i]+q[i+1]+q[i+2])/3;
+      if(m>242) q[i+3]=0;
+      else if(m>225) q[i+3]=Math.min(q[i+3],Math.round((242-m)*14));
+    }
+    rx.putImageData(im,0,0);
+  }catch(e){}
   return (RECORTE[k]=r);
 }
 
@@ -712,7 +735,7 @@ async function dibujar(ctx,W,H,st){
       const tope=Math.min(54*s,px*0.68);
       const p2=ajustar(ctx,sub,tope,x1-x0,'semi',22);
       ctx.fillStyle=NEGRO; ctx.fillText(sub,x0,y+10*s); y+=p2*1.35; }
-    if(p.sku) y+=chapita(ctx,x0,y+10*s,p.cod||codigoLindo(p.sku),s)+28*s;
+    if(p.sku) y+=chapitaBorde(ctx,y+10*s,p.cod||codigoLindo(p.sku),s,x0)+26*s;
     const altoP=104*s*1.75, yPrecio=yPie-altoP-42*s;
     const ficha=st.ficha.filter(l=>l.trim());
     const altoF=ficha.length?(40+27*ficha.length)*s:0;
