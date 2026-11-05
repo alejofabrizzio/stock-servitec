@@ -137,7 +137,7 @@
     <div class="lienzos">
       <div class="lienzo">
         <p>Para el canal</p>
-        <canvas id="cCanal" width="2480" height="2880" hidden></canvas>
+        <canvas id="cCanal" width="1378" height="1600" hidden></canvas>
         <img id="iCanal" alt="Flyer para el canal" draggable="true">
         <div class="acciones chicas">
           <button data-copiar="cCanal">Copiar imagen</button>
@@ -147,7 +147,7 @@
       </div>
       <div class="lienzo">
         <p>Para el estado</p>
-        <canvas id="cEstado" width="2160" height="3840" hidden></canvas>
+        <canvas id="cEstado" width="900" height="1600" hidden></canvas>
         <img id="iEstado" alt="Flyer para el estado" draggable="true">
         <div class="acciones chicas">
           <button data-copiar="cEstado">Copiar imagen</button>
@@ -222,6 +222,13 @@ function marcaDe(p){
   if(s.startsWith('cat'))return'cat';
   if(p.prov==='omaha'&&/OREBRO/i.test(p.descripcion||''))return'orebro';
   return p.prov||'';
+}
+/* El SKU del sistema trae un prefijo interno de RP ("OM 443.JBK-46",
+   "GM G2250AR") que al cliente no le dice nada: en la pieza va el código del
+   producto, que es lo que figura en la herramienta y en el sitio del proveedor. */
+function codigoLindo(sku){
+  return (sku||'').replace(/^OM\s*\d+\./i,'').replace(/^OM\s+/i,'')
+                  .replace(/^GM\s+/i,'').trim();
 }
 function limpia(d){
   let t=(d||'').replace(/\s+/g,' ').trim().replace(/^\(oferta\)\s*/i,'');
@@ -391,7 +398,7 @@ async function encabezado(ctx,W,s,marca){
   y+=104*s;
   const lg=LOGOS[marca]?await img(LOGOS[marca]):null;
   if(lg){
-    const alto=62*s, an=alto*lg.width/lg.height;
+    const alto=70*s, an=alto*lg.width/lg.height;
     if(LOGO_CLARO[marca]){
       const p=14*s; ctx.fillStyle=COLOR_MARCA[marca]||ROJO;
       redondeado(ctx,x-p,y-p,an+p*2,alto+p*2,10*s); ctx.fill();
@@ -595,7 +602,7 @@ async function encajar(ctx,p,x0,y0,x1,y1){
       ctx.drawImage(lg,x0+(x1-x0-w)/2,y0+(y1-y0-h)/2,w,h); }
     return false;
   }
-  const MAXAMP=2.4;   // sobre el lienzo de 2480 px: 1,2x de la foto original
+  const MAXAMP=1.9;   // más que esto y la foto de 800 px se nota estirada
   const e=Math.min((x1-x0)/f.width,(y1-y0)/f.height,MAXAMP);
   const w=f.width*e, h=f.height*e;
   const dib=e>1.15?agrandar(f,w,h,cf(p.sku)):f;
@@ -632,9 +639,13 @@ async function dibujar(ctx,W,H,st){
     const px=ajustar(ctx,tit,80*s,x1-x0,'black',40);
     ctx.fillStyle=NEGRO;
     envolver(ctx,tit,x1-x0,2).forEach(l=>{ctx.fillText(l,x0,y); y+=px*1.08});
-    if(sub){ const p2=ajustar(ctx,sub,52*s,x1-x0,'bold',26);
-      ctx.fillStyle=NEGRO; ctx.fillText(sub,x0,y+6*s); y+=p2*1.3; }
-    if(p.sku) y+=chapita(ctx,x0,y+10*s,p.sku,s)+28*s;
+    if(sub){
+      // el subtítulo va siempre bastante más chico que el título: si queda
+      // parecido, la pieza se ve rara
+      const tope=Math.min(52*s,px*0.62);
+      const p2=ajustar(ctx,sub,tope,x1-x0,'bold',22);
+      ctx.fillStyle=NEGRO; ctx.fillText(sub,x0,y+10*s); y+=p2*1.35; }
+    if(p.sku) y+=chapita(ctx,x0,y+10*s,p.cod||codigoLindo(p.sku),s)+28*s;
     const altoP=104*s*1.75, yPrecio=yPie-altoP-42*s;
     const ficha=st.ficha.filter(l=>l.trim());
     const altoF=ficha.length?(40+27*ficha.length)*s:0;
@@ -657,8 +668,9 @@ async function dibujar(ctx,W,H,st){
         fuente(ctx,px,'black');
       });
       fuente(ctx,36*s,'black');
-      const wc=anchoT(ctx,p.sku)+40*s;
-      yy+=chapita(ctx,der?x1-wc:x0,yy+8*s,p.sku,s)+16*s;
+      const cd=p.cod||codigoLindo(p.sku);
+      const wc=anchoT(ctx,cd)+40*s;
+      yy+=chapita(ctx,der?x1-wc:x0,yy+8*s,cd,s)+16*s;
       await encajar(ctx,p,x0,yy,x1,y+(i+1)*(libre/2)-10*s);
     }
     if(st.agua)await marcaAgua(ctx,W,H,s);
@@ -689,7 +701,8 @@ async function dibujar(ctx,W,H,st){
       yt=cy+ch-66*s;
       ctx.strokeStyle='#edeff2'; ctx.lineWidth=2*s;
       ctx.beginPath(); ctx.moveTo(cx+16*s,yt-10*s); ctx.lineTo(cx+cw-16*s,yt-10*s); ctx.stroke();
-      fuente(ctx,21*s,'bold'); ctx.fillStyle=ROJO; ctx.fillText(p.sku,cx+16*s,yt+12*s);
+      fuente(ctx,21*s,'bold'); ctx.fillStyle=ROJO;
+      ctx.fillText(p.cod||codigoLindo(p.sku),cx+16*s,yt+12*s);
       if(p.precio>0){
         const t='$'+fmt(p.precio), pz=ajustar(ctx,t,44*s,cw*0.55,'black',22);
         ctx.fillStyle=NEGRO; ctx.fillText(t,cx+cw-16*s-anchoT(ctx,t),yt+2*s);
@@ -715,7 +728,8 @@ async function dibujar(ctx,W,H,st){
       let yt=y+(alto-16*s-bloque)/2;
       ctx.fillStyle=NEGRO;
       lineas.forEach(l=>{ctx.fillText(l,tx,yt); yt+=30*s*1.25});
-      fuente(ctx,22*s,'bold'); ctx.fillStyle=ROJO; ctx.fillText(p.sku,tx,yt+8*s);
+      fuente(ctx,22*s,'bold'); ctx.fillStyle=ROJO;
+      ctx.fillText(p.cod||codigoLindo(p.sku),tx,yt+8*s);
       if(p.precio>0){
         const t='$'+fmt(p.precio); ajustar(ctx,t,42*s,(x1-tx)*0.5,'black',22);
         ctx.fillStyle=NEGRO; ctx.fillText(t,x1-24*s-anchoT(ctx,t),yt);
@@ -750,7 +764,8 @@ function textoCanal(){
     for(const p of st.items){
       const m=marcaDe(p).toUpperCase();
       const pr=p.precio>0?('$'+fmt(p.precio)+','+cents(p.precio)+' + IVA'):'consultar';
-      L.push('🔧 *'+limpia(p.descripcion)+'*\nCód. '+p.sku+(m?' · '+m:'')+' — '+pr);
+      L.push('🔧 *'+limpia(p.descripcion)+'*\nCód. '+(p.cod||codigoLindo(p.sku))+
+             (m?' · '+m:'')+' — '+pr);
     }
   }
   L.push('📲 Consultas y pedidos: '+WA+'\n🧰 Stock completo: '+WEB+
@@ -762,7 +777,10 @@ let pintando=false, otraVez=false;
 async function pintar(){
   if(pintando){otraVez=true;return}
   pintando=true;
-  for(const [id,W,H] of [['cCanal',2480,2880],['cEstado',2160,3840]]){
+  /* 1600 px en el lado largo: el texto sale nítido, WhatsApp no la reescala y
+     la foto del producto —que es de 800 px— casi no hay que agrandarla. Más
+     grande el texto quedaba perfecto pero la foto se ablandaba. */
+  for(const [id,W,H] of [['cCanal',1378,1600],['cEstado',900,1600]]){
     const c=$(id), ctx=c.getContext('2d');
     ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
     await dibujar(ctx,W,H,st);
@@ -787,7 +805,8 @@ function pintarItems(){
     d.innerHTML='<div class="cab"><span class="cod">'+p.sku+'</span>'+
       '<button class="quitar" title="Sacar">×</button></div>'+
       '<div class="desc">'+limpia(p.descripcion)+'</div>'+
-      '<div class="fila"><input class="pr" type="number" step="0.01" value="'+
+      '<div class="fila"><input class="cd" value="'+(p.cod||p.sku)+'" title="Código que sale en la pieza">'+
+      '<input class="pr" type="number" step="0.01" value="'+
       (p.precio||0)+'" title="Precio de lista"></div>'+
       (hayFoto(p.sku)
         ? (propia?'<div class="foto-ok">Foto tuya guardada · <button class="borrar">sacarla</button></div>':'')
@@ -796,6 +815,7 @@ function pintarItems(){
           '<input type="file" accept="image/*" hidden></label></div>');
     d.querySelector('.quitar').onclick=()=>{st.items.splice(i,1);pintarItems();pintar()};
     d.querySelector('.pr').oninput=e=>{p.precio=parseFloat(e.target.value)||0;pintar()};
+    d.querySelector('.cd').oninput=e=>{p.cod=e.target.value.trim();pintar()};
     const zona=d.querySelector('.sinfoto');
     if(zona){
       zona.querySelector('input').onchange=e=>ponerFoto(p.sku,e.target.files[0]);
@@ -814,7 +834,7 @@ function pintarItems(){
 function agregar(p){
   const max={producto:1,combo:2,varios:4,ingresos:6,aviso:0}[st.plantilla];
   if(st.items.length>=max)st.items.shift();
-  st.items.push({...p});
+  st.items.push({...p, cod:codigoLindo(p.sku)});
   if(st.plantilla==='producto'){
     const [t,sb]=partirTitulo(limpia(p.descripcion));
     $('titulo').value=t; $('sub').value=sb; st.titulo=t; st.sub=sb;
