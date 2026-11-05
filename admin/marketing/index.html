@@ -145,7 +145,7 @@
     <div class="lienzos">
       <div class="lienzo">
         <p>Para el canal</p>
-        <canvas id="cCanal" width="1378" height="1600" hidden></canvas>
+        <canvas id="cCanal" width="1320" height="1585" hidden></canvas>
         <img id="iCanal" alt="Flyer para el canal" draggable="true">
         <div class="acciones chicas">
           <button data-copiar="cCanal">Copiar imagen</button>
@@ -344,6 +344,18 @@ function envolver(ctx,t,w,max){
   if(act&&lin.length<max)lin.push(act);
   return lin.slice(0,max);
 }
+/* El tamaño más grande con el que el texto entra en `maxl` líneas. En sus
+   piezas el título es grande y parte en dos, no chico y en una sola. */
+function ajustarLineas(ctx,t,px,w,peso,maxl,min){
+  maxl=maxl||2; min=min||30;
+  let s=px; fuente(ctx,s,peso);
+  while(s>min){
+    const lin=envolver(ctx,t,w,maxl+1);
+    if(lin.length<=maxl && lin.every(l=>anchoT(ctx,l)<=w))return s;
+    s-=2; fuente(ctx,s,peso);
+  }
+  return s;
+}
 function ajustar(ctx,t,px,w,peso,min){
   min=min||18;
   let s=px; fuente(ctx,s,peso);
@@ -361,19 +373,20 @@ function fondo(ctx,W,H,color){
   ctx.fillStyle=BLANCO; ctx.fillRect(0,0,W,H);
   const alto=H*0.30;
   const g=ctx.createLinearGradient(W,0,W*0.1,alto);
-  g.addColorStop(0,color); g.addColorStop(1,color+'00');
+  g.addColorStop(0,color+'cc'); g.addColorStop(1,color+'00');
   ctx.save(); ctx.globalAlpha=1; ctx.fillStyle=g; ctx.fillRect(0,0,W,alto);
   const g2=ctx.createLinearGradient(0,0,0,alto);
   g2.addColorStop(0,'#ffffff00'); g2.addColorStop(1,'#ffffff');
   ctx.fillStyle=g2; ctx.fillRect(0,0,W,alto); ctx.restore();
   // la trama de puntos de la esquina
-  const x0=W*0.58,y0=H*0.012,x1=W-8,y1=H*0.115,paso=18*(W/1240);
-  ctx.save(); ctx.fillStyle=BLANCO;
+  // los puntitos: chicos y del color de la marca, no blancos y grandes
+  const x0=W*0.60,y0=H*0.010,x1=W-6,y1=H*0.10,paso=15*(W/1240);
+  ctx.save(); ctx.fillStyle=color;
   for(let y=y0;y<y1;y+=paso)for(let x=x0;x<x1;x+=paso){
     const fx=(x-x0)/(x1-x0), fy=1-(y-y0)/(y1-y0);
-    const k=Math.max(0,Math.min(1,fx*0.8+fy*0.5)), r=5.4*(W/1240)*k;
-    if(r<0.7)continue;
-    ctx.globalAlpha=0.82*k; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
+    const k=Math.max(0,Math.min(1,fx*0.8+fy*0.5)), r=3.6*(W/1240)*k;
+    if(r<0.5)continue;
+    ctx.globalAlpha=0.59*k; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
   }
   ctx.restore();
 }
@@ -430,15 +443,21 @@ function chapita(ctx,x,y,texto,s,px){
   return h+10*s;
 }
 
+/* La bandera roja de la esquina: sale del borde derecho y termina en punta
+   hacia la izquierda, como en las piezas de Servitec. */
 function cinta(ctx,W,texto,s){
   let lineas=texto.toUpperCase().split(' ');
   if(lineas.length>2)lineas=[lineas.slice(0,-1).join(' '),lineas.slice(-1)[0]];
-  fuente(ctx,50*s,'black');
-  const w=Math.max(...lineas.map(l=>anchoT(ctx,l)))+90*s;
-  const h=(56*lineas.length+56)*s, y0=70*s;
-  ctx.fillStyle=ROJO; redondeado(ctx,W-w,y0,w+40*s,h,28*s); ctx.fill();
+  fuente(ctx,46*s,'black');
+  const w=Math.max(...lineas.map(l=>anchoT(ctx,l)))+72*s;
+  const h=(54*lineas.length+46)*s, y0=62*s, r=26*s, x0=W-w-60*s;
+  ctx.fillStyle=ROJO;
+  redondeado(ctx,x0,y0,w+60*s,h,r); ctx.fill();
+  ctx.fillRect(W-r,y0,r,h);
+  ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x0-34*s,y0+h/2); ctx.lineTo(x0,y0+h);
+  ctx.closePath(); ctx.fill();
   ctx.fillStyle=BLANCO;
-  lineas.forEach((l,i)=>ctx.fillText(l,W-w+46*s,y0+26*s+i*56*s));
+  lineas.forEach((l,i)=>ctx.fillText(l,W-40*s-anchoT(ctx,l),y0+22*s+i*54*s));
 }
 
 function fichaTecnica(ctx,x,y,lineas,s,ancho){
@@ -603,6 +622,14 @@ function agrandar(f,w,h,clave){
   AFILADAS[k]=c; return c;
 }
 
+/* La sombra difusa bajo el producto: sin ella la foto queda flotando. */
+function sombraPiso(ctx,cx,cy,an,s){
+  ctx.save(); ctx.globalAlpha=.24; ctx.fillStyle='#5a6068';
+  ctx.filter='blur('+Math.round(18*s)+'px)';
+  ctx.beginPath(); ctx.ellipse(cx,cy,an/2,an*0.07,0,0,7); ctx.fill();
+  ctx.restore(); ctx.filter='none';
+}
+
 async function encajar(ctx,p,x0,y0,x1,y1){
   if(!p.sku)return false;                       // todavía no eligieron producto
   let f=await fuenteFoto(p);
@@ -648,9 +675,10 @@ async function dibujar(ctx,W,H,st){
     const par=partirTitulo(limpia(p.descripcion,false));
     const tit=(st.titulo||par[0]).toUpperCase();
     const sub=st.sub!==undefined&&st.sub!==''?st.sub:par[1];
-    const px=ajustar(ctx,tit,80*s,x1-x0,'black',40);
+    const px=ajustarLineas(ctx,tit,92*s,x1-x0,'black',2,44);
+    fuente(ctx,px,'black');
     ctx.fillStyle=NEGRO;
-    envolver(ctx,tit,x1-x0,2).forEach(l=>{ctx.fillText(l,x0,y); y+=px*1.08});
+    envolver(ctx,tit,x1-x0,2).forEach(l=>{ctx.fillText(l,x0,y); y+=px*1.08; fuente(ctx,px,'black');});
     if(sub){
       // el subtítulo va siempre bastante más chico que el título: si queda
       // parecido, la pieza se ve rara
@@ -661,7 +689,9 @@ async function dibujar(ctx,W,H,st){
     const altoP=104*s*1.75, yPrecio=yPie-altoP-42*s;
     const ficha=st.ficha.filter(l=>l.trim());
     const altoF=ficha.length?(40+27*ficha.length)*s:0;
-    await encajar(ctx,p,x0,y,x1,yPrecio-altoF-(ficha.length?28*s:20*s));
+    const pisoY=yPrecio-altoF-(ficha.length?28*s:20*s);
+    sombraPiso(ctx,W/2,pisoY-10*s,(x1-x0)*0.52,s);
+    await encajar(ctx,p,x0,y,x1,pisoY);
     if(st.agua)await marcaAgua(ctx,W,H,s);
     if(ficha.length)fichaTecnica(ctx,x0,yPrecio-altoF-18*s,ficha,s,W*0.9);
     pildora(ctx,W,p.precio,s,yPrecio);
@@ -798,7 +828,7 @@ async function pintar(){
   /* 1600 px en el lado largo: el texto sale nítido, WhatsApp no la reescala y
      la foto del producto —que es de 800 px— casi no hay que agrandarla. Más
      grande el texto quedaba perfecto pero la foto se ablandaba. */
-  for(const [id,W,H] of [['cCanal',1378,1600],['cEstado',900,1600]]){
+  for(const [id,W,H] of [['cCanal',1320,1585],['cEstado',900,1600]]){
     const c=$(id), ctx=c.getContext('2d');
     ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
     await dibujar(ctx,W,H,st);
