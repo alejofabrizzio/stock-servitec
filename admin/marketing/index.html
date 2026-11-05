@@ -46,6 +46,16 @@
   .canva h2{margin-bottom:6px}
   .canva p{font-size:13px;color:var(--gris);line-height:1.5;margin:0 0 10px}
   .canva .chico{font-size:12.5px;margin-top:10px}
+  .pegar{display:flex;flex-direction:column;gap:6px;margin:4px 0 14px}
+  .pegar .prod{font-weight:800;font-size:12px;color:var(--rojo);margin-top:6px;
+    text-transform:uppercase;letter-spacing:.4px}
+  .pegar button{display:flex;gap:10px;align-items:baseline;text-align:left;
+    background:#fafbfc;border:1px solid var(--linea);color:var(--negro);
+    padding:7px 10px;font-weight:400;font-size:13px;width:100%}
+  .pegar button:hover{background:#fdf0ef;border-color:var(--rojo)}
+  .pegar b{font-size:11px;color:var(--gris);text-transform:uppercase;
+    letter-spacing:.4px;min-width:62px;font-weight:800}
+  .pegar span{flex:1}
   .items{margin-top:8px;display:flex;flex-direction:column;gap:8px}
   .item{border:1px solid var(--linea);border-radius:11px;padding:10px;background:#fbfbfc}
   .item .cab{display:flex;gap:8px;align-items:center;justify-content:space-between}
@@ -147,12 +157,12 @@
     <div class="canva">
       <h2>Para Canva</h2>
       <p>Si la pieza la armás en Canva, acá te llevás los datos para
-         <b>Crear en lote</b>: una fila por producto, con el precio del día.
-         Agregá todos los productos que quieras arriba (no hay límite) y bajá
-         la planilla.</p>
+         los datos de cada producto, listos para pegar. Tocá un campo y se copia;
+         después lo pegás en el texto que corresponda de tu plantilla.</p>
+      <div id="paraPegar"></div>
       <div class="acciones" style="justify-content:flex-start">
-        <button id="bajarCsv">Bajar la planilla</button>
         <button class="sec" id="bajarPng">Fotos sin fondo</button>
+        <button class="sec" id="bajarCsv">Planilla (Canva Pro)</button>
       </div>
       <p class="chico" id="avisoCanva"></p>
     </div>
@@ -855,6 +865,7 @@ async function pintar(){
     $(i).alt=(st.items[0]?limpia(st.items[0].descripcion):'Flyer')+' · Servitec MG SRL';
   }
   $('pre').textContent=textoCanal();
+  pintarParaPegar();
   const sinFoto=st.items.filter(p=>!CACHE['/fotos/'+cf(p.sku)+'.jpg']||false);
   $('aviso').textContent=st.items.some(p=>!(p.precio>0))
     ? 'Ojo: hay un producto sin precio, sale como CONSULTAR.' : '';
@@ -1022,6 +1033,51 @@ Promise.all([
   fetch('/fotos-hd/index.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>[]),
   cargarPropias()
 ]).then(([a,b])=>{ TIENE=new Set(a.map(cf)); TIENEHD=new Set(b.map(cf)); pintarItems(); pintar(); });
+
+/* Los campos de cada producto, para copiar de a uno y pegarlos en la
+   plantilla de Canva. Con el plan gratis no hay "Crear en lote", así que esto
+   es lo que evita tipear —y equivocarse con— el precio. */
+function camposDe(p){
+  const [t,sb]=partirTitulo(limpia(p.descripcion,false));
+  const hoy=new Date();
+  const uno=st.items.length===1;
+  return [
+    ['Título', (uno&&st.titulo?st.titulo:t.toUpperCase())],
+    ['Bajada', (uno&&st.sub?st.sub:sb)],
+    ['Código', p.cod||codigoLindo(p.sku)],
+    ['Marca', marcaDe(p).toUpperCase()],
+    ['Precio', p.precio>0?'$'+fmt(p.precio):'CONSULTAR'],
+    ['Centavos', p.precio>0?cents(p.precio):''],
+    ['Mes', MESES[hoy.getMonth()]+'. '+hoy.getFullYear()]
+  ].filter(([,v])=>v);
+}
+function pintarParaPegar(){
+  const c=$('paraPegar'); if(!c)return;
+  c.innerHTML='';
+  if(!st.items.length){ c.textContent=''; return; }
+  const caja=document.createElement('div'); caja.className='pegar';
+  st.items.forEach((p,i)=>{
+    if(st.items.length>1){
+      const h=document.createElement('div'); h.className='prod';
+      h.textContent=(i+1)+' · '+(p.cod||codigoLindo(p.sku));
+      caja.appendChild(h);
+    }
+    for(const [et,val] of camposDe(p)){
+      const b=document.createElement('button');
+      b.innerHTML='<b></b><span></span>';
+      b.querySelector('b').textContent=et;
+      b.querySelector('span').textContent=val;
+      b.onclick=async()=>{
+        try{ await navigator.clipboard.writeText(val);
+             const s2=b.querySelector('span'); const antes=s2.textContent;
+             s2.textContent='¡copiado!'; setTimeout(()=>s2.textContent=antes,1100);
+        }catch(e){ $('avisoCanva').textContent='No pude copiar: seleccionalo a mano.'; }
+      };
+      caja.appendChild(b);
+    }
+  });
+  c.appendChild(caja);
+}
 
 /* ---------------------------------------------------- lote para Canva
 
