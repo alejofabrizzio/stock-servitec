@@ -408,13 +408,13 @@ function redondeado(ctx,x,y,w,h,r){
 function fondo(ctx,W,H,color){
   ctx.fillStyle=BLANCO; ctx.fillRect(0,0,W,H);
   // el velo del piso: sin esto la mitad de abajo queda blanca y plana
-  const hp=hondo(color,0.30), y0p=H*0.46;
+  const hp=hondo(color,0.26), y0p=H*0.40;
   const gp=ctx.createLinearGradient(0,y0p,0,H);
-  gp.addColorStop(0,hp+'00'); gp.addColorStop(1,hp+'22');
+  gp.addColorStop(0,hp+'00'); gp.addColorStop(1,hp+'3a');
   ctx.fillStyle=gp; ctx.fillRect(0,y0p,W,H-y0p);
-  const alto=H*0.34;
-  const g=ctx.createLinearGradient(W,0,W*0.1,alto);
-  g.addColorStop(0,hondo(color,0.40)); g.addColorStop(0.45,color);
+  const alto=H*0.40;
+  const g=ctx.createLinearGradient(W,0,W*0.02,alto);
+  g.addColorStop(0,hondo(color,0.52)); g.addColorStop(0.38,color);
   g.addColorStop(1,color+'00');
   ctx.save(); ctx.globalAlpha=1; ctx.fillStyle=g; ctx.fillRect(0,0,W,alto);
   const g2=ctx.createLinearGradient(0,0,0,alto);
@@ -436,13 +436,13 @@ function fondo(ctx,W,H,color){
 
 /* los costados apenas cerrados: le dan volumen a la pieza */
 function vineta(ctx,W,H){
-  const a=W*0.16;
+  const a=W*0.21;
   ctx.save();
   let g=ctx.createLinearGradient(0,0,a,0);
-  g.addColorStop(0,'rgba(12,16,22,0.10)'); g.addColorStop(1,'rgba(12,16,22,0)');
+  g.addColorStop(0,'rgba(12,16,22,0.15)'); g.addColorStop(1,'rgba(12,16,22,0)');
   ctx.fillStyle=g; ctx.fillRect(0,0,a,H);
   g=ctx.createLinearGradient(W,0,W-a,0);
-  g.addColorStop(0,'rgba(12,16,22,0.10)'); g.addColorStop(1,'rgba(12,16,22,0)');
+  g.addColorStop(0,'rgba(12,16,22,0.15)'); g.addColorStop(1,'rgba(12,16,22,0)');
   ctx.fillStyle=g; ctx.fillRect(W-a,0,a,H);
   ctx.restore();
 }
@@ -468,9 +468,20 @@ async function marcaAgua(ctx,W,H,s){
   ctx.restore(); ctx.textAlign='left';
 }
 
-async function encabezado(ctx,W,s,marca){
+/* Con el degradado hondo, un titulo negro sobre el azul de Kalydon no se
+   leeria: se mira cuanta luz quedo ahi y se elige la tinta. */
+function tintaSobre(ctx,x,y,w,h){
+  try{
+    const d=ctx.getImageData(Math.round(x),Math.round(y),Math.round(w),Math.round(h)).data;
+    let sum=0,n=0;
+    for(let i=0;i<d.length;i+=16){ sum+=(d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114); n++; }
+    return n&&sum/n<118?BLANCO:NEGRO;
+  }catch(e){ return NEGRO; }
+}
+
+async function encabezado(ctx,W,s,marca,tinta){
   const x=58*s; let y=66*s;
-  ctx.fillStyle=NEGRO; ctx.textBaseline='top';
+  ctx.fillStyle=tinta||NEGRO; ctx.textBaseline='top';
   fuente(ctx,42*s,'italic'); ctx.fillText('SERVITEC MG SRL',x,y);
   fuente(ctx,25*s,'italic');
   const hoy=new Date();
@@ -486,7 +497,7 @@ async function encabezado(ctx,W,s,marca){
     ctx.drawImage(lg,x,y,an,alto);
     return y+alto+26*s;
   }
-  if(marca){ ctx.fillStyle=NEGRO; fuente(ctx,52*s,'black');
+  if(marca){ ctx.fillStyle=tinta||NEGRO; fuente(ctx,52*s,'black');
     ctx.fillText(marca.toUpperCase(),x,y); return y+78*s; }
   return y;
 }
@@ -755,7 +766,8 @@ async function dibujar(ctx,W,H,st){
   ctx.clearRect(0,0,W,H);
   fondo(ctx,W,H,COLOR_MARCA[marca]||ROJO);
   const x0=58*s, x1=W-58*s;
-  let y=await encabezado(ctx,W,s,marca);
+  const tinta=tintaSobre(ctx,x0,40*s,W*0.78-x0,H*0.27-40*s);
+  let y=await encabezado(ctx,W,s,marca,tinta);
   if(st.cinta)cinta(ctx,W,st.cinta,s);
   const yPie=pie(ctx,W,H,s);
   ctx.textBaseline='top';
@@ -767,14 +779,14 @@ async function dibujar(ctx,W,H,st){
     const sub=st.sub!==undefined&&st.sub!==''?st.sub:par[1];
     const px=ajustarLineas(ctx,tit,100*s,x1-x0,'black',2,50);
     fuente(ctx,px,'black');
-    ctx.fillStyle=NEGRO;
-    envolver(ctx,tit,x1-x0,2).forEach(l=>{ctx.fillText(l,x0,y); y+=px*1.08; fuente(ctx,px,'black');});
+    ctx.fillStyle=tinta;
+    envolver(ctx,tit,x1-x0,2).forEach(l=>{ctx.fillText(l,x0,y); y+=px*1.02; fuente(ctx,px,'black');});
     if(sub){
       // el subtítulo va siempre bastante más chico que el título: si queda
       // parecido, la pieza se ve rara
       const tope=Math.min(56*s,px*0.70);
-      const p2=ajustar(ctx,sub,tope,x1-x0,'bold',22);
-      ctx.fillStyle=NEGRO; ctx.fillText(sub,x0,y+10*s); y+=p2*1.35; }
+      const p2=ajustar(ctx,sub,tope,x1-x0,'black',22);
+      ctx.fillStyle=tinta; ctx.fillText(sub,x0,y+10*s); y+=p2*1.35; }
     if(p.sku) y+=chapitaBorde(ctx,y+10*s,p.cod||codigoLindo(p.sku),s,x0)+26*s;
     const altoP=104*s*1.75, yPrecio=yPie-altoP-42*s;
     const ficha=st.ficha.filter(l=>l.trim());
@@ -811,7 +823,7 @@ async function dibujar(ctx,W,H,st){
   }else if(st.plantilla==='varios'){
     const tit=(st.titulo||'OFERTAS DE LA SEMANA').toUpperCase();
     const px=ajustar(ctx,tit,74*s,x1-x0,'black',34);
-    ctx.fillStyle=NEGRO;
+    ctx.fillStyle=tinta;
     envolver(ctx,tit,x1-x0,2).forEach(l=>{ctx.fillText(l,x0,y); y+=px*1.1});
     if(st.sub){ fuente(ctx,28*s,'semi'); ctx.fillStyle=GRIS;
       envolver(ctx,st.sub,x1-x0,2).forEach(l=>{ctx.fillText(l,x0,y); y+=28*s*1.3}); }
@@ -845,7 +857,7 @@ async function dibujar(ctx,W,H,st){
   }else if(st.plantilla==='ingresos'){
     const tit=(st.titulo||'NUEVOS INGRESOS').toUpperCase();
     const px=ajustar(ctx,tit,72*s,x1-x0,'black',32);
-    ctx.fillStyle=NEGRO;
+    ctx.fillStyle=tinta;
     envolver(ctx,tit,x1-x0,2).forEach(l=>{ctx.fillText(l,x0,y); y+=px*1.1});
     y+=16*s;
     const lista=ps.slice(0,6), alto=(yPie-y-24*s)/Math.max(1,lista.length);
@@ -873,7 +885,7 @@ async function dibujar(ctx,W,H,st){
   }else{ // aviso
     const tit=(st.titulo||'').toUpperCase();
     const px=ajustar(ctx,tit,86*s,x1-x0,'black',40);
-    ctx.fillStyle=NEGRO;
+    ctx.fillStyle=tinta;
     envolver(ctx,tit,x1-x0,3).forEach(l=>{ctx.fillText(l,x0,y); y+=px*1.12});
     if(st.sub){ y+=14*s; fuente(ctx,34*s,''); ctx.fillStyle='#3c4046';
       envolver(ctx,st.sub,x1-x0,5).forEach(l=>{ctx.fillText(l,x0,y); y+=34*s*1.32}); }
