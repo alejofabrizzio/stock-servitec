@@ -365,10 +365,34 @@ function img(src){
 
 /* ------------------------------------------------------------ dibujo base */
 function fuente(ctx,px,peso){
-  const w={black:900,bold:800,semi:600,'':500}[peso]??500;
+  const w={black:900,bold:800,semi:700,'':600}[peso]??600;
   const it=peso==='italic';
   ctx.font=(it?'italic 700 ':w+' ')+Math.round(px)+'px Mont,Arial,sans-serif';
 }
+/* Montserrat no trae variante ancha —su único eje es el peso, y ya se usa el
+   900—, así que para que la letra pare más firme se le engrosa el trazo con un
+   contorno del mismo color. Se engancha una sola vez en el propio fillText,
+   para que valga en toda la pieza. La letra chica queda afuera: a ese cuerpo el
+   contorno la empasta. Es el mismo criterio que casa_estado.py. */
+const GROSOR=0.011, GROSOR_DESDE=24, GROSOR_TOPE=2;
+function firme(ctx){
+  if(ctx._firme)return; ctx._firme=true;
+  const orig=ctx.fillText.bind(ctx);
+  ctx.fillText=function(txt,x,y){
+    const m=/(\d+(?:\.\d+)?)px/.exec(ctx.font);
+    const px=m?parseFloat(m[1]):0;
+    if(px>=GROSOR_DESDE){
+      const n=Math.min(GROSOR_TOPE,Math.max(1,Math.round(px*GROSOR)));
+      ctx.save();
+      ctx.strokeStyle=ctx.fillStyle; ctx.lineWidth=n*2;
+      ctx.lineJoin='round'; ctx.miterLimit=2;
+      ctx.strokeText(txt,x,y);
+      ctx.restore();
+    }
+    orig(txt,x,y);
+  };
+}
+
 function anchoT(ctx,t){return ctx.measureText(t).width}
 function envolver(ctx,t,w,max){
   const pal=(t||'').split(' ');let lin=[],act='';
@@ -762,6 +786,7 @@ function tarjeta(ctx,x,y,w,h,s){
 /* -------------------------------------------------------------- plantillas */
 async function dibujar(ctx,W,H,st){
   const s=W/1240, ps=st.items;
+  firme(ctx);
   const marca=ps.length&&ps.every(p=>marcaDe(p)===marcaDe(ps[0]))?marcaDe(ps[0]):'';
   ctx.clearRect(0,0,W,H);
   fondo(ctx,W,H,COLOR_MARCA[marca]||ROJO);
