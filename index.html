@@ -672,6 +672,10 @@ const CATEGORIAS = [
   ['Soldadura', /plasma/],
   ['Amoladoras y cortadoras', /amoladora|cortahierro|cortadora|multi.?cortadora|multi.?herramienta|amoladoras/],
   // Antes que Taller, que se queda con "prensa" a secas: el sargento es de carpinteria.
+  // Antes que Sierras y que Taller: el sargento es una herramienta manual.
+  ['Herramientas manuales', /sargento|prensa tipo f|prensa de carpinter/],
+  // Antes que Sierras: una hoja de sierra es un consumible, no una sierra.
+  ['Accesorios y consumibles', /hoja de sierra|hojas? p\/ ?(caladora|sierra)|hojas? para (caladora|sierra)|(set|jgo|juego) de \d+ hojas/],
   ['Sierras y carpintería', /sierra|caladora|inglet|cepillad|cepillo (electrico|rebajador)|garlopa|router|fresadora|combinada \d|biseladora|torno para madera|lijadora de banda|sargento|prensa tipo f/],
   ['Lijadoras y pulidoras', /lijadora|pulidora|orbital|abrillantadora/],
   // Antes que Soldadura para que quede al lado en la grilla: ningun producto de
