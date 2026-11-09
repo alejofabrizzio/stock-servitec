@@ -837,10 +837,16 @@ function textoBuscable(p){
 // SKU que forman la subsección "Juegos de tubos" dentro de Taller (lista curada).
 const JGOTUBOS = new Set(['SHL150-9','SHL108-7','OM 443.JBK-108','OM 443.JBK-46','OM 443.JBK-40','OM 471.SHK-216','WDFWST4D21','WDFWMS4D01','WDFWST2D25'].map(x=>x.toLowerCase().replace(/[^a-z0-9]/g,'')));
 const BLACK_EXTRA = new Set(['RL30-9B','VNL150-9BK','KATL-9BK','BSPACK002-9','MDL1500-9','MDL1050-9','LQI1800-9','NV3L-9','NVL515-9','CCL600-9','SML2000-9','AITL32-9B','BSB1820-9','BSB1840-9'].map(x=>x.toLowerCase().replace(/[^a-z0-9]/g,'')));
+// Productos que van si o si en una seccion, aunque la descripcion diga otra cosa.
+const CAT_FORZADA = {};
+[['WDFWHS3210','Taller y máquinas de banco']].forEach(([sku,cat])=>{
+  CAT_FORZADA[sku.toLowerCase().replace(/[^a-z0-9]/g,'')] = cat;
+});
 function categoriaDe(p){
   if(p._cat) return p._cat;
   if(p.cat){ p._cat=p.cat; return p._cat; }
   const sk_=(p.sku||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(CAT_FORZADA[sk_]){ p._cat=CAT_FORZADA[sk_]; return p._cat; }
   if(JGOTUBOS.has(sk_)){ p._cat='Taller y máquinas de banco'; return p._cat; }
   if(BLACK_EXTRA.has(sk_)){ p._cat='Black Series LQ'; return p._cat; }
   const t = normalizar(p.descripcion||'') + ' # ' + normalizar(p.sku||'');
@@ -867,10 +873,25 @@ const EXTRAS_SKU = {
   // esta empieza con "ventosa", asi que va por SKU.
   'Combos': new Set(['COMBOV'].map(x=>x.toLowerCase().replace(/[^a-z0-9]/g,''))),
 };
+// La seccion que le tocaria a un producto black si no fuera black: se usa para
+// que la linea aparezca tambien donde el cliente la busca (una amoladora black
+// esta en Black Series y tambien en Amoladoras).
+function catSinBlack(p){
+  const t = normalizar(p.descripcion||'') + ' # ' + normalizar(p.sku||'');
+  for(const [nombre,rx] of CATEGORIAS){
+    if(nombre==='Black Series LQ') continue;
+    if(rx.test(t)) return nombre;
+  }
+  return OTROS;
+}
 function categoriasDe(p){
   if(p._cats) return p._cats;
   const t = normalizar(p.descripcion||'') + ' # ' + normalizar(p.sku||'');
   const out = [categoriaDe(p)];
+  if(out[0]==='Black Series LQ'){
+    const n = catSinBlack(p);
+    if(n!==OTROS && !out.includes(n)) out.push(n);
+  }
   for(const [nombre,rx] of EXTRAS){
     if(rx.test(t) && !out.includes(nombre)) out.push(nombre);
   }
@@ -1102,7 +1123,9 @@ const PRODUCTOS_MANUALES = [
   { sku:'KCEAP20P', descripcion:'CORTADORA DE CESPED A EXPLOSION 175 CC AUTOPROPULSADA KONAN', precio:0, stock:20, proveedor:'konan', cat:'Jardín y exterior', consultar:true },
 ];
 // SKU que no se muestran aunque vengan en el Excel (se filtran en cada carga).
-const EXCLUIDOS = new Set(['SLXCO42K','OM 034.EA4'].map(x=>claveFoto(x)));
+const EXCLUIDOS = new Set(['SLXCO42K','OM 034.EA4',
+  // Discontinuados: no hay unidades aunque RP Sistemas las siga contando.
+  'OM 440.MT-55PLUS','OM 440.RM-26PLUSSPECIAL'].map(x=>claveFoto(x)));
 // La linea CAT no se publica, salvo estos dos (cualquier CAT nuevo tampoco aparece).
 const CAT_VISIBLES = new Set(['CATCOMBO05','CATDA01902'].map(x=>claveFoto(x)));
 // La unidad que hay en deposito esta fallada: se muestra sin stock aunque RP
@@ -1110,7 +1133,7 @@ const CAT_VISIBLES = new Set(['CATCOMBO05','CATDA01902'].map(x=>claveFoto(x)));
 const SIN_STOCK = new Set(['OM 281.SI-8'].map(x=>claveFoto(x)));
 // Al reves: unidades que estan en el deposito pero RP Sistemas trae en cero.
 // Sacar de aca en cuanto el stock quede bien cargado en RP.
-const CON_STOCK = {'WDFWCD3B214': 2};
+const CON_STOCK = {'WDFWCD3B214': 2, 'MDL1300-9': 5};
 // Nombres que en el Excel vienen distinto de como se conoce el producto.
 const RENOMBRES = {
   'om023edbat20': 'BORDEADORA A BATERIA OMAHA',
