@@ -674,6 +674,8 @@ const CATEGORIAS = [
   // Antes que Taller, que se queda con "prensa" a secas: el sargento es de carpinteria.
   // Antes que Sierras y que Taller: el sargento es una herramienta manual.
   ['Herramientas manuales', /sargento|prensa tipo f|prensa de carpinter/],
+  // Antes que Herramientas manuales: una tijera de poda es de jardin.
+  ['Jardín y exterior', /tijera (de|para) pod|tijera podad|podadora|corta ?seto|corta ?cerco/],
   // Antes que Herramientas manuales: un juego de brocas, mechas o puntas es
   // consumible aunque la descripcion empiece con "set" o "jgo".
   ['Accesorios y consumibles', /\bbrocas?\b|\bmechas?\b|\bmandril|\bpunzon/],
