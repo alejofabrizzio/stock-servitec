@@ -1132,7 +1132,9 @@ const CAT_VISIBLES = new Set(['CATCOMBO05','CATDA01902'].map(x=>claveFoto(x)));
 // Sistemas la siga contando. Sacar de aca cuando se reponga.
 const SIN_STOCK = new Set(['OM 281.SI-8',
   // Las dos tazas: RP cuenta una de cada una y en el deposito no hay ninguna.
-  'TTL420-8B','TTL420-8N'].map(x=>claveFoto(x)));
+  'TTL420-8B','TTL420-8N',
+  // La desmalezadora MP Tools: RP cuenta una y en el deposito no hay.
+  'MPTDE52'].map(x=>claveFoto(x)));
 // Al reves: unidades que estan en el deposito pero RP Sistemas trae en cero.
 // Sacar de aca en cuanto el stock quede bien cargado en RP.
 const CON_STOCK = {'WDFWCD3B214': 2, 'MDL1300-9': 5};
