@@ -674,6 +674,9 @@ const CATEGORIAS = [
   // Antes que Taller, que se queda con "prensa" a secas: el sargento es de carpinteria.
   // Antes que Sierras y que Taller: el sargento es una herramienta manual.
   ['Herramientas manuales', /sargento|prensa tipo f|prensa de carpinter/],
+  // Antes que Herramientas manuales: un juego de brocas, mechas o puntas es
+  // consumible aunque la descripcion empiece con "set" o "jgo".
+  ['Accesorios y consumibles', /\bbrocas?\b|\bmechas?\b|\bmandril|\bpunzon/],
   // Antes que Sierras: una hoja de sierra es un consumible, no una sierra.
   ['Accesorios y consumibles', /hoja de sierra|hojas? p\/ ?(caladora|sierra)|hojas? para (caladora|sierra)|(set|jgo|juego) de \d+ hojas/],
   ['Sierras y carpintería', /sierra|caladora|inglet|cepillad|cepillo (electrico|rebajador)|garlopa|router|fresadora|combinada \d|biseladora|torno para madera|lijadora de banda|sargento|prensa tipo f/],
@@ -849,7 +852,9 @@ const CAT_FORZADA = {};
  ['OM 281.VICE4','Accesorios y consumibles'],
  ['OM 471.MC-KIT2','Accesorios y consumibles'],
  ['OM 471.MC-KIT1','Accesorios y consumibles'],
- ['OM 625.IP-7','Outdoor y camping']].forEach(([sku,cat])=>{
+ ['OM 625.IP-7','Outdoor y camping'],
+ ['WDFWKK1K31','Outdoor y camping'],
+ ['WDFWKK1K51','Outdoor y camping']].forEach(([sku,cat])=>{
   CAT_FORZADA[sku.toLowerCase().replace(/[^a-z0-9]/g,'')] = cat;
 });
 function categoriaDe(p){
@@ -1157,6 +1162,9 @@ const RENOMBRES = {
   'om023edbat20': 'BORDEADORA A BATERIA OMAHA',
   // El Excel lo trae como OREBRO pero es un taladro Omaha.
   'omtp650': 'TALADRO PERCUTOR 650W OMAHA',
+  // El Excel lo trae como "Martillo OREBRO 10J": asi no cae en Demoledores.
+  // El nombre es el que trae la caja.
+  'dem45hex': 'MARTILLO DEMOLEDOR HEX 10 J OREBRO',
   // RP Sistemas pego un precio adentro de la descripcion de estos dos. Mismo
   // texto, sin el numero suelto.
   'wdfwlap53224': 'AMOLADORA ANGULAR INALAMBRICA 20V 115 MM 950W + 2 BAT 4.0 AH + CARGADOR + MALETA WADFOW',
