@@ -842,7 +842,8 @@ const CAT_FORZADA = {};
 [['WDFWHS3210','Taller y máquinas de banco'],
  // Las prensas planas para taladro de banco son un accesorio, no una morsa de banco.
  ['OM 281.VICE3','Accesorios y consumibles'],
- ['OM 281.VICE4','Accesorios y consumibles']].forEach(([sku,cat])=>{
+ ['OM 281.VICE4','Accesorios y consumibles'],
+ ['OM 471.MC-KIT2','Accesorios y consumibles']].forEach(([sku,cat])=>{
   CAT_FORZADA[sku.toLowerCase().replace(/[^a-z0-9]/g,'')] = cat;
 });
 function categoriaDe(p){
