@@ -332,6 +332,8 @@
   .vends button:hover{border-color:var(--accent);transform:translateY(-1px);}
   .vends button b{font-size:13px;color:var(--text);}
   .vends button i{font-size:11px;color:var(--muted);font-style:normal;}
+  /* display:grid de abajo le gana al atributo hidden si no se fuerza */
+  [hidden]{display:none !important;}
   /* Los dos caminos del pedido: cliente con clave, o nuevo directo a Paz */
   .caminos{display:grid;gap:8px;}
   .camino{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;
