@@ -332,6 +332,19 @@
   .vends button:hover{border-color:var(--accent);transform:translateY(-1px);}
   .vends button b{font-size:13px;color:var(--text);}
   .vends button i{font-size:11px;color:var(--muted);font-style:normal;}
+  /* Acceso de clientes: sin ingresar, el pedido va solo a Administracion */
+  .acceso{margin-top:10px;}
+  .acceso .link{background:none;border:0;padding:0;font-family:inherit;font-size:11.5px;
+                color:var(--muted);text-decoration:underline;cursor:pointer;}
+  .acceso .link:hover{color:var(--accent);}
+  .acceso form{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-top:9px;}
+  .acceso input{padding:8px 10px;border:1px solid var(--border);border-radius:8px;
+                background:var(--panel2);color:var(--text);font-family:inherit;font-size:12.5px;min-width:0;}
+  .acceso input:focus{outline:none;border-color:var(--accent);}
+  .acceso form button{padding:8px 14px;border:0;border-radius:8px;background:var(--accent);
+                      color:#fff;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;}
+  .acceso .msg{grid-column:1/-1;margin:2px 0 0;font-size:11.5px;color:#c0392b;font-weight:600;}
+  .acceso .ok{color:var(--muted);font-weight:600;}
   .vacio{text-align:center;color:var(--muted);padding:34px 10px;font-size:13.5px;}
 
   .loading{text-align:center;color:var(--muted);padding:60px 20px;font-size:14px;}
@@ -607,8 +620,18 @@
     <div class="lista" id="listaPedido"></div>
     <div class="pie2" id="pie2">
       <div id="totalPedido"></div>
-      <p>Elegí con quién querés hacer el pedido:</p>
+      <p id="txtVends">Elegí con quién querés hacer el pedido:</p>
       <div class="vends" id="vends"></div>
+      <div class="acceso" id="acceso">
+        <button type="button" class="link" id="abrirAcceso">¿Sos cliente de Servitec? Ingresá para pedirle a tu vendedor</button>
+        <form id="formAcceso" hidden autocomplete="on">
+          <input id="accUser" placeholder="Usuario" autocomplete="username" aria-label="Usuario">
+          <input id="accPass" type="password" placeholder="Contraseña" autocomplete="current-password" aria-label="Contraseña">
+          <button type="submit">Entrar</button>
+          <p class="msg" id="accMsg" hidden></p>
+        </form>
+        <button type="button" class="link" id="btnSalir" hidden>Salir de la cuenta de clientes</button>
+      </div>
     </div>
   </div>
 </div>
@@ -743,6 +766,11 @@ const COLORES = {
 const OTROS = 'Otros';
 
 // Vendedores que reciben los pedidos por WhatsApp (formato internacional, sin signos)
+// Quien llega de la publicidad y no ingresa SOLO puede pedirle a Administracion:
+// asi un cliente nuevo no le escribe de la nada a un vendedor y saltea el control
+// del pago. Los clientes entran con el usuario unico y recuperan a los cuatro.
+const ADMINISTRACION = ['Paz','Magali'];
+const CLAVE_CLIENTES = '6f4d9a2460ce7f755a979f9db06fe0ffdfc659e515d89148149cc56a8fb80f20';
 const VENDEDORES = [
   {nombre:'Paz',    tel:'5491150147585'},
   {nombre:'Daniel', tel:'5491123568049'},
@@ -1749,9 +1777,27 @@ function quitarLinea(sku){
   },220);
 }
 
+async function sha256(txt){
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txt));
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+function esCliente(){
+  try{ return localStorage.getItem('accesoServitec') === CLAVE_CLIENTES; }catch(e){ return false; }
+}
+function destinos(){
+  return esCliente() ? VENDEDORES : VENDEDORES.filter(v=>ADMINISTRACION.includes(v.nombre));
+}
 function pintarVendedores(){
-  document.getElementById('vends').innerHTML = VENDEDORES.map((v,i)=>
-    `<button data-vend="${i}"><b>${v.nombre}</b><i>Enviar pedido</i></button>`).join('');
+  const cli = esCliente();
+  document.getElementById('vends').innerHTML = destinos().map(v=>
+    `<button data-tel="${v.tel}" data-nombre="${v.nombre}"><b>${v.nombre}</b><i>${cli?'Enviar pedido':'Administración'}</i></button>`).join('');
+  document.getElementById('txtVends').textContent = cli
+    ? 'Elegí con quién querés hacer el pedido:'
+    : 'Tu pedido lo toma Administración:';
+  const abrir=document.getElementById('abrirAcceso'), form=document.getElementById('formAcceso'),
+        salir=document.getElementById('btnSalir');
+  abrir.hidden = cli; salir.hidden = !cli;
+  if(cli) form.hidden = true;
 }
 
 // Numero de pedido: SV-DDMM-XXXX. Es la matricula del pedido y sirve para una
@@ -1817,9 +1863,35 @@ document.getElementById('listaPedido').addEventListener('click',e=>{
 document.getElementById('vends').addEventListener('click',e=>{
   const b=e.target.closest('[data-vend]');
   if(!b || !totalItems()) return;
-  const v=VENDEDORES[+b.dataset.vend];
-  try{ localStorage.setItem('vendedorServitec', v.nombre); }catch(err){}
-  window.open(`https://wa.me/${v.tel}?text=${encodeURIComponent(textoPedido())}`,'_blank');
+  try{ localStorage.setItem('vendedorServitec', b.dataset.nombre); }catch(err){}
+  window.open(`https://wa.me/${b.dataset.tel}?text=${encodeURIComponent(textoPedido())}`,'_blank');
+});
+
+// Acceso de clientes: un solo usuario para todos.
+document.getElementById('abrirAcceso').addEventListener('click',()=>{
+  const f=document.getElementById('formAcceso');
+  f.hidden=!f.hidden;
+  if(!f.hidden) document.getElementById('accUser').focus();
+});
+document.getElementById('formAcceso').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const msg=document.getElementById('accMsg');
+  const u=document.getElementById('accUser').value.trim().toLowerCase();
+  const c=document.getElementById('accPass').value;
+  const h=await sha256(`${u}:${c}`);
+  if(h===CLAVE_CLIENTES){
+    try{ localStorage.setItem('accesoServitec', CLAVE_CLIENTES); }catch(err){}
+    msg.hidden=true;
+    document.getElementById('accPass').value='';
+    pintarVendedores();
+  }else{
+    msg.textContent='Usuario o contraseña incorrectos.';
+    msg.hidden=false;
+  }
+});
+document.getElementById('btnSalir').addEventListener('click',()=>{
+  try{ localStorage.removeItem('accesoServitec'); }catch(err){}
+  pintarVendedores();
 });
 
 // Banner de marcas: la lista va duplicada para que el ciclo no tenga corte
