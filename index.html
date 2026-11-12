@@ -794,6 +794,11 @@ const OTROS = 'Otros';
 // saltea el control del pago. Los clientes entran con el usuario unico de abajo
 // y recuperan a los cuatro.
 const CLAVE_CLIENTES = '6f4d9a2460ce7f755a979f9db06fe0ffdfc659e515d89148149cc56a8fb80f20';
+// Se aceptan las dos grafias que anda dando vueltas (con y sin la "a" de
+// herramientas). Usuario y clave se comparan en minusculas y sin espacios,
+// porque el teclado del celular capitaliza la primera letra solo.
+const CLAVES_OK = [CLAVE_CLIENTES,
+  '94b849028971f17df2fcd155765f335fd21d7da7eeb4060eb8ae22c008539949'];
 const VENDEDORES = [
   {nombre:'Paz',    tel:'5491150147585'},
   {nombre:'Daniel', tel:'5491123568049'},
@@ -1904,9 +1909,9 @@ document.getElementById('formAcceso').addEventListener('submit',async e=>{
   e.preventDefault();
   const msg=document.getElementById('accMsg');
   const u=document.getElementById('accUser').value.trim().toLowerCase();
-  const c=document.getElementById('accPass').value;
+  const c=document.getElementById('accPass').value.trim().toLowerCase();
   const h=await sha256(`${u}:${c}`);
-  if(h===CLAVE_CLIENTES){
+  if(CLAVES_OK.includes(h)){
     try{ localStorage.setItem('accesoServitec', CLAVE_CLIENTES); }catch(err){}
     msg.hidden=true;
     document.getElementById('accPass').value='';
