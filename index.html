@@ -332,6 +332,18 @@
   .vends button:hover{border-color:var(--accent);transform:translateY(-1px);}
   .vends button b{font-size:13px;color:var(--text);}
   .vends button i{font-size:11px;color:var(--muted);font-style:normal;}
+  /* Los dos caminos del pedido: cliente con clave, o nuevo directo a Paz */
+  .caminos{display:grid;gap:8px;}
+  .camino{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;
+          background:var(--panel2);border:1px solid var(--border);border-left:3px solid var(--accent);
+          padding:12px 14px;border-radius:8px;cursor:pointer;font-family:inherit;text-align:left;
+          transition:all .15s;}
+  .camino:hover{border-color:var(--accent);transform:translateY(-1px);}
+  .camino b{font-size:13.5px;color:var(--text);}
+  .camino i{font-size:11px;color:var(--muted);font-style:normal;}
+  .camino.nuevo{background:var(--accent);border-color:var(--accent);border-left-color:#fff;}
+  .camino.nuevo b{color:#fff;}
+  .camino.nuevo i{color:rgba(255,255,255,.85);}
   /* Acceso de clientes: sin ingresar, el pedido va solo a Administracion */
   .acceso{margin-top:10px;}
   .acceso .link{background:none;border:0;padding:0;font-family:inherit;font-size:11.5px;
@@ -620,16 +632,25 @@
     <div class="lista" id="listaPedido"></div>
     <div class="pie2" id="pie2">
       <div id="totalPedido"></div>
-      <p id="txtVends">Elegí con quién querés hacer el pedido:</p>
-      <div class="vends" id="vends"></div>
+      <p id="txtVends">¿Cómo querés hacer el pedido?</p>
+      <div class="caminos" id="caminos">
+        <button type="button" class="camino" id="caminoCliente">
+          <b>Elegí tu vendedor</b><i>Ya soy cliente de Servitec</i>
+        </button>
+        <button type="button" class="camino nuevo" id="caminoNuevo">
+          <b>Soy nuevo, quiero hacer mi pedido</b><i>Te atiende Paz</i>
+        </button>
+      </div>
       <div class="acceso" id="acceso">
-        <button type="button" class="link" id="abrirAcceso">¿Sos cliente de Servitec? Ingresá para pedirle a tu vendedor</button>
         <form id="formAcceso" hidden autocomplete="on">
           <input id="accUser" placeholder="Usuario" autocomplete="username" aria-label="Usuario">
           <input id="accPass" type="password" placeholder="Contraseña" autocomplete="current-password" aria-label="Contraseña">
           <button type="submit">Entrar</button>
           <p class="msg" id="accMsg" hidden></p>
         </form>
+      </div>
+      <div class="vends" id="vends"></div>
+      <div class="acceso">
         <button type="button" class="link" id="btnSalir" hidden>Salir de la cuenta de clientes</button>
       </div>
     </div>
@@ -766,10 +787,10 @@ const COLORES = {
 const OTROS = 'Otros';
 
 // Vendedores que reciben los pedidos por WhatsApp (formato internacional, sin signos)
-// Quien llega de la publicidad y no ingresa SOLO puede pedirle a Administracion:
-// asi un cliente nuevo no le escribe de la nada a un vendedor y saltea el control
-// del pago. Los clientes entran con el usuario unico y recuperan a los cuatro.
-const ADMINISTRACION = ['Paz','Magali'];
+// Quien llega de la publicidad y no ingresa NO ve a los vendedores: su pedido
+// entra por Paz. Asi un cliente nuevo no le escribe de la nada a un vendedor y
+// saltea el control del pago. Los clientes entran con el usuario unico de abajo
+// y recuperan a los cuatro.
 const CLAVE_CLIENTES = '6f4d9a2460ce7f755a979f9db06fe0ffdfc659e515d89148149cc56a8fb80f20';
 const VENDEDORES = [
   {nombre:'Paz',    tel:'5491150147585'},
@@ -1784,20 +1805,17 @@ async function sha256(txt){
 function esCliente(){
   try{ return localStorage.getItem('accesoServitec') === CLAVE_CLIENTES; }catch(e){ return false; }
 }
-function destinos(){
-  return esCliente() ? VENDEDORES : VENDEDORES.filter(v=>ADMINISTRACION.includes(v.nombre));
-}
 function pintarVendedores(){
   const cli = esCliente();
-  document.getElementById('vends').innerHTML = destinos().map(v=>
-    `<button data-tel="${v.tel}" data-nombre="${v.nombre}"><b>${v.nombre}</b><i>${cli?'Enviar pedido':'Administración'}</i></button>`).join('');
+  // Con la sesion abierta aparecen los cuatro; sin ella, los dos caminos.
+  document.getElementById('vends').innerHTML = cli ? VENDEDORES.map(v=>
+    `<button data-tel="${v.tel}" data-nombre="${v.nombre}"><b>${v.nombre}</b><i>Enviar pedido</i></button>`).join('') : '';
   document.getElementById('txtVends').textContent = cli
     ? 'Elegí con quién querés hacer el pedido:'
-    : 'Tu pedido lo toma Administración:';
-  const abrir=document.getElementById('abrirAcceso'), form=document.getElementById('formAcceso'),
-        salir=document.getElementById('btnSalir');
-  abrir.hidden = cli; salir.hidden = !cli;
-  if(cli) form.hidden = true;
+    : '¿Cómo querés hacer el pedido?';
+  document.getElementById('caminos').hidden = cli;
+  document.getElementById('btnSalir').hidden = !cli;
+  if(cli) document.getElementById('formAcceso').hidden = true;
 }
 
 // Numero de pedido: SV-DDMM-XXXX. Es la matricula del pedido y sirve para una
@@ -1868,10 +1886,17 @@ document.getElementById('vends').addEventListener('click',e=>{
 });
 
 // Acceso de clientes: un solo usuario para todos.
-document.getElementById('abrirAcceso').addEventListener('click',()=>{
+document.getElementById('caminoCliente').addEventListener('click',()=>{
   const f=document.getElementById('formAcceso');
   f.hidden=!f.hidden;
   if(!f.hidden) document.getElementById('accUser').focus();
+});
+// El cliente nuevo va directo al chat de Paz, con el pedido ya armado.
+document.getElementById('caminoNuevo').addEventListener('click',()=>{
+  if(!totalItems()) return;
+  const paz = VENDEDORES.find(v=>v.nombre==='Paz');
+  try{ localStorage.setItem('vendedorServitec', paz.nombre); }catch(err){}
+  window.open(`https://wa.me/${paz.tel}?text=${encodeURIComponent(textoPedido())}`,'_blank');
 });
 document.getElementById('formAcceso').addEventListener('submit',async e=>{
   e.preventDefault();
@@ -1883,6 +1908,7 @@ document.getElementById('formAcceso').addEventListener('submit',async e=>{
     try{ localStorage.setItem('accesoServitec', CLAVE_CLIENTES); }catch(err){}
     msg.hidden=true;
     document.getElementById('accPass').value='';
+    document.getElementById('formAcceso').hidden=true;
     pintarVendedores();
   }else{
     msg.textContent='Usuario o contraseña incorrectos.';
