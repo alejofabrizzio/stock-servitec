@@ -1754,15 +1754,27 @@ function pintarVendedores(){
     `<button data-vend="${i}"><b>${v.nombre}</b><i>Enviar pedido</i></button>`).join('');
 }
 
+// Numero de pedido: SV-DDMM-XXXX. Es la matricula del pedido y sirve para una
+// sola cosa, pero importante: un pedido que llega SIN numero no salio del sitio.
+// Administracion (Paz / Magali) no despacha nada sin numero y sin pago confirmado.
+function nroPedido(){
+  const d=new Date();
+  const dd=String(d.getDate()).padStart(2,'0'), mm=String(d.getMonth()+1).padStart(2,'0');
+  let r='';
+  for(let i=0;i<4;i++) r += 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)];
+  return `SV-${dd}${mm}-${r}`;
+}
+
 function textoPedido(){
   const lineas=Object.entries(pedido).map(([sk,q])=>{
     const p=prodDe(sk); if(!p) return '';
     const marca=p.stock>0 ? '' : ' [sin stock]';
     return `• ${q} x ${p.descripcion.split('|')[0].trim()} (${p.sku})${marca} — ${fmtPrecio(p.precio*q)}`;
   }).filter(Boolean);
-  return `Hola! Quiero hacer este pedido:\n\n${lineas.join('\n')}\n\n`+
+  return `Hola! Quiero hacer este pedido:\n\nPedido N° ${nroPedido()}\n\n${lineas.join('\n')}\n\n`+
          `${totalItems()} producto(s) — Total: ${fmtPrecio(totalPedido())}\n`+
-         `(precios de lista, a confirmar)`;
+         `(precios de lista, a confirmar)\n\n`+
+         `— El pedido se prepara cuando Administración confirma el pago. —`;
 }
 
 function actualizarPedido(){ pintarBarra(); pintarPedido(); sincronizarBotones(); }
