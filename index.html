@@ -1900,7 +1900,7 @@ document.getElementById('vends').addEventListener('click',e=>{
 document.getElementById('totalPedido').addEventListener('click',e=>{
   if(!e.target.closest('#limpiarPedido')) return;
   if(!confirm('¿Vaciar el pedido y empezar de nuevo?')) return;
-  pedido={}; guardarPedido(); actualizarPedido();
+  pedido={}; guardarPedido(); pintarTotal(); actualizarPedido();
 });
 document.getElementById('caminoCliente').addEventListener('click',()=>{
   const f=document.getElementById('formAcceso');
