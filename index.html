@@ -362,6 +362,9 @@
   .acceso input:focus{outline:none;border-color:var(--accent);}
   .acceso form button{padding:8px 14px;border:0;border-radius:8px;background:var(--accent);
                       color:#fff;font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;}
+  .acceso .recordar{grid-column:1/-1;display:flex;align-items:center;gap:7px;margin-top:2px;
+                    font-size:11.5px;color:var(--muted);font-weight:600;cursor:pointer;}
+  .acceso .recordar input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;flex:0 0 auto;}
   .acceso .msg{grid-column:1/-1;margin:2px 0 0;font-size:11.5px;color:#c0392b;font-weight:600;}
   .acceso .ok{color:var(--muted);font-weight:600;}
   .vacio{text-align:center;color:var(--muted);padding:34px 10px;font-size:13.5px;}
@@ -653,6 +656,7 @@
           <input id="accUser" placeholder="Usuario" autocomplete="username" aria-label="Usuario">
           <input id="accPass" type="password" placeholder="Contraseña" autocomplete="current-password" aria-label="Contraseña">
           <button type="submit">Entrar</button>
+          <label class="recordar"><input type="checkbox" id="accRecordar" checked> Dejar la sesión guardada en este equipo</label>
           <p class="msg" id="accMsg" hidden></p>
         </form>
       </div>
@@ -1815,8 +1819,13 @@ async function sha256(txt){
   const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txt));
   return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
 }
+// La sesion va en localStorage si el cliente pidio dejarla guardada, y si no en
+// sessionStorage, que se borra solo al cerrar el navegador.
 function esCliente(){
-  try{ return localStorage.getItem('accesoServitec') === CLAVE_CLIENTES; }catch(e){ return false; }
+  try{
+    return localStorage.getItem('accesoServitec') === CLAVE_CLIENTES
+        || sessionStorage.getItem('accesoServitec') === CLAVE_CLIENTES;
+  }catch(e){ return false; }
 }
 function pintarVendedores(){
   const cli = esCliente();
@@ -1923,7 +1932,11 @@ document.getElementById('formAcceso').addEventListener('submit',async e=>{
   const c=document.getElementById('accPass').value.trim().toLowerCase();
   const h=await sha256(`${u}:${c}`);
   if(CLAVES_OK.includes(h)){
-    try{ localStorage.setItem('accesoServitec', CLAVE_CLIENTES); }catch(err){}
+    const guardar = document.getElementById('accRecordar').checked;
+    try{
+      (guardar ? localStorage : sessionStorage).setItem('accesoServitec', CLAVE_CLIENTES);
+      if(!guardar) localStorage.removeItem('accesoServitec');
+    }catch(err){}
     msg.hidden=true;
     document.getElementById('accPass').value='';
     document.getElementById('formAcceso').hidden=true;
@@ -1934,7 +1947,7 @@ document.getElementById('formAcceso').addEventListener('submit',async e=>{
   }
 });
 document.getElementById('btnSalir').addEventListener('click',()=>{
-  try{ localStorage.removeItem('accesoServitec'); }catch(err){}
+  try{ localStorage.removeItem('accesoServitec'); sessionStorage.removeItem('accesoServitec'); }catch(err){}
   pintarVendedores();
 });
 
