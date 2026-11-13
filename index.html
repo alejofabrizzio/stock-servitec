@@ -332,9 +332,11 @@
   .vends button:hover{border-color:var(--accent);transform:translateY(-1px);}
   .vends button b{font-size:13px;color:var(--text);}
   .vends button i{font-size:11px;color:var(--muted);font-style:normal;}
-  .limpiar{background:none;border:0;padding:0;margin:-6px 0 12px;font-family:inherit;
-           font-size:11.5px;color:var(--muted);text-decoration:underline;cursor:pointer;}
-  .limpiar:hover{color:var(--accent);}
+  .limpiar{display:block;width:100%;background:#fff;border:1.5px solid var(--accent);
+           padding:11px 14px;margin:0 0 12px;border-radius:8px;font-family:inherit;
+           font-size:14px;font-weight:800;color:var(--accent);cursor:pointer;
+           letter-spacing:.2px;transition:all .15s;}
+  .limpiar:hover{background:var(--accent);color:#fff;}
   /* display:grid de abajo le gana al atributo hidden si no se fuerza */
   [hidden]{display:none !important;}
   /* Los dos caminos del pedido: cliente con clave, o nuevo directo a Paz */
