@@ -183,6 +183,14 @@
   .circtemp h2{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0;padding:12px 15px;
                font-size:14px;background:#1f7a4d;color:#fff;letter-spacing:.6px;text-transform:uppercase;}
   .circtemp h2 span{font-size:11px;font-weight:600;opacity:.9;text-transform:none;letter-spacing:0;}
+  /* La circular arranca cerrada: en la portada es un cartel, se abre al tocarlo */
+  .circtemp h2{cursor:pointer;user-select:none;}
+  .circtemp h2:hover{background:#1a6641;}
+  .circtemp h2 .ct-ver{margin-left:auto;display:flex;align-items:center;gap:7px;
+                       font-size:11px;font-weight:700;text-transform:none;letter-spacing:0;
+                       white-space:nowrap;}
+  .circtemp h2 .ct-flecha{display:inline-block;font-size:13px;line-height:1;transition:transform .2s;}
+  .circtemp h2.abierta .ct-flecha{transform:rotate(180deg);}
   .ct-grupo{border-top:1px solid var(--border);}
   .ct-grupo:first-child{border-top:0;}
   .ct-grupo h3{margin:0;padding:10px 15px 0;font-size:11.5px;font-weight:800;color:var(--muted);
@@ -591,8 +599,8 @@
       <div class="nov-fila" id="novFila"></div>
     </div>
     <div class="circtemp" id="circTemp">
-      <h2 id="circTempTit"></h2>
-      <div id="circTempCuerpo"></div>
+      <h2 id="circTempTit" role="button" tabindex="0" aria-expanded="false" aria-controls="circTempCuerpo"></h2>
+      <div id="circTempCuerpo" hidden></div>
     </div>
     <div class="liqui" id="liqui">
       <h2>Liquidación TRUPER/PRETUL <span>hasta agotar stock · precio a consultar</span></h2>
@@ -1410,8 +1418,10 @@ function pintarCircular(todos){
   }).filter(Boolean);
   if(!bloques.length){ caja.style.display='none'; return; }
   caja.style.display='block';
+  const cuantos = bloques.reduce((n,b)=>n + (b.match(/class="nov"/g)||[]).length, 0);
   document.getElementById('circTempTit').innerHTML =
-    `${CIRCULAR_TEMP.titulo} <span>${CIRCULAR_TEMP.bajada}</span>`;
+    `${CIRCULAR_TEMP.titulo} <span>${CIRCULAR_TEMP.bajada}</span>` +
+    `<span class="ct-ver"><b id="ctVerTxt" data-ver="Ver los ${cuantos} productos">Ver los ${cuantos} productos</b><span class="ct-flecha">▾</span></span>`;
   document.getElementById('circTempCuerpo').innerHTML = bloques.join('');
 }
 
@@ -1686,6 +1696,21 @@ document.getElementById('novFila').addEventListener('click',e=>{
   window.scrollTo({top:0,behavior:'smooth'});
 });
 
+// En la portada la circular es un cartel cerrado: 78 tarjetas desplegadas
+// tapaban todo lo demas. Se abre al tocar el titulo.
+function alternarCircular(){
+  const tit=document.getElementById('circTempTit'), cuerpo=document.getElementById('circTempCuerpo');
+  const abrir = cuerpo.hidden;
+  cuerpo.hidden = !abrir;
+  tit.classList.toggle('abierta', abrir);
+  tit.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+  const txt=document.getElementById('ctVerTxt');
+  if(txt) txt.textContent = abrir ? 'Cerrar' : (txt.dataset.ver || 'Ver los productos');
+}
+document.getElementById('circTempTit').addEventListener('click', alternarCircular);
+document.getElementById('circTempTit').addEventListener('keydown', e=>{
+  if(e.key==='Enter' || e.key===' '){ e.preventDefault(); alternarCircular(); }
+});
 document.getElementById('circTempCuerpo').addEventListener('click',e=>{
   const b=e.target.closest('.nov');
   if(!b) return;
