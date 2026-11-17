@@ -187,6 +187,10 @@
   .ct-grupo:first-child{border-top:0;}
   .ct-grupo h3{margin:0;padding:10px 15px 0;font-size:11.5px;font-weight:800;color:var(--muted);
                text-transform:uppercase;letter-spacing:.6px;}
+  .circtemp .np{margin-top:6px;font-size:13px;font-weight:800;color:var(--accent);}
+  .circtemp .sf{display:flex;align-items:center;justify-content:center;height:100px;
+                margin-bottom:8px;border-radius:6px;background:#f1f3f7;color:var(--muted);
+                font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;}
   /* Aviso al pie del titulo de una seccion (compra minima, condiciones) */
   .nota-sec{display:none;margin:0 0 14px;padding:10px 13px;border-radius:9px;font-size:12.5px;
             line-height:1.45;color:var(--text);background:#fff7ed;border:1px solid #f0cfa8;}
@@ -881,25 +885,41 @@ function subDe(p, seccionNombre){
 }
 
 // Destacados de la portada. Para cambiarlos, editar esta lista de SKU.
-const NOVEDADES = ['LPACK002-8','SCL500-7','LOD003','CIL295-8','ADL4-8','TC300L-9','TCB240L-9','LMO5','DFL9-8','MATLA-9','MDL1300-9','BL18-8B','atl18-8b'];
+// Ingresos de Lusqtoff de la carga del 17/11: todo lo que hoy tiene stock y
+// en la carga anterior (12/11) estaba en cero. SCL500-7 y LOD003 son alta nueva.
+// Primero las maquinas y lo que se luce, despues los consumibles.
+const NOVEDADES = ['LPACK002-8','SCL500-7','ADL4-8','MDL1300-9','BL18-8B','LMO5',
+  'CIL295-8','LOD003','atl18-8b','TL1-9N3E','MATLA-9','RLD52R47PRO','DFL9-8',
+  'TC300L-9','TCB240L-9','DVEL125-9','LQFLUX061',
+  // El combo Vohler, que entro la semana pasada y sigue siendo nuevo
+  'VHCOMBO007'];
 
 // Circular de temporada: lo fuerte de jardin, bombas, hidrolavadoras y
 // generadores. Va por SKU, asi que no importa en que seccion este categorizado
 // cada producto. Para sacar la circular, vaciar la lista de grupos.
 const CIRCULAR_TEMP = {
   titulo: 'Circular temporada',
-  bajada: 'Jardinería · Bombas de agua · Hidrolavadoras · Generadores',
+  bajada: 'Jardinería · Riego · Bombas de agua · Hidrolavadoras · Generadores · Outdoor',
   grupos: [
     ['Jardinería', ['OM 471.CDS-52','OM 023.EDBAT-20','GM G1844AR','WDFWHPS3061','11002-B',
-                    'OM 624.BME-300','TRP2123238','SPL2400-8','EMTEHHR40122','PROM-52GC',
-                    'KCEAP20P','RLD52R47PRO','OM 023.DN-52M','EMTEPSR630101','WDFWPR2301',
-                    'LS26-7','GM G1850AR','OM 624.BME-500','GM G3079AR','LPACK002-8',
-                    'LJ-F40','FMOL20-8','FL2-8B']],
+                    'OM 624.BME-300','TRP2123238','SPL2400-8','PROM-52GC','KCEAP20P',
+                    'RLD52R47PRO','OM 023.DN-52M','EMTEPSR630101','WDFWPR2301','LS26-7',
+                    'GM G1850AR','OM 624.BME-500','GM G3079AR','LPACK002-8','LQEMS382',
+                    'OM 440.CCBAT-20','CHL400-8','KLDDE55','OM 624.SE-2400','SAL600-8',
+                    'LD5500-8B','LCO1203-8B']],
+    // El enrollador de manguera EMTOP es el de 40 metros: es el que hay mucho.
+    ['Riego y pulverización', ['EMTEHHR40122','EMTEHHR20124','LJ-F40','FMOL20-8','FL2-8B']],
     ['Bombas de agua', ['GM G2785AR','BXWPSIQB60','OM 309.QB-601/2HP','GM 3193',
-                        'GM G2783AR','GM G2779AR']],
-    ['Hidrolavadoras', ['LAPL3,6-8BK','HL1800-8','HL2100-9']],
+                        'GM G2783AR','GM G2779AR','CPM158','LSP-750','GM G3445AR','GM G3446AR']],
+    ['Hidrolavadoras y aspiradoras', ['GM G2517AR','GM G2516AR','LAPL3,6-8BK','HL1800-8',
+                        'HL2100-9','OM 123.VP-13','WDFWLV202014','OM 123.VPH-450',
+                        'WDFWLV0801','OM 123.VPBAT-22','OM 123.AMBATP-LI']],
+    // Van todos los que haya: de un generador tener entre 4 y 10 ya es mucho.
     ['Generadores', ['KGE/3000M','OM 175.EP-7000','KLDGAE10KVA','OM 175.EP-3500ES','GP8000']],
-    ['Pileta y pintura', ['ACP4-8','LQ-IONSOL','DFL9-8','LLINT20-8']],
+    ['Pileta y pintura', ['ACP4-8','LQ-IONSOL','DFL9-8','WDFWCB3H13','WDFWCB3H23','LLINT20-8']],
+    ['Outdoor y camping', ['TL1-9NJ','TL1-9RP','TL1-9C','TL1-9B3E','TL1-9N3E','TL1-9R',
+                        'LOD025','LOD003','LOD035','CAL2-8','KLDCE24','MATLA-9','MATLV-9',
+                        'OM 602.BAG-1','OM 602.BAG-3']],
   ],
 };
 
@@ -1267,6 +1287,8 @@ const CON_STOCK = {'WDFWCD3B214': 2, 'MDL1300-9': 5};
 // Nombres que en el Excel vienen distinto de como se conoce el producto.
 const RENOMBRES = {
   'om023edbat20': 'BORDEADORA A BATERIA OMAHA',
+  // RP lo cargo con el codigo en minuscula y la descripcion cortada.
+  'atl188b': 'TALADRO A BATERIA CON PERCUTOR LUSQTOFF',
   // El Excel lo trae como OREBRO pero es un taladro Omaha.
   'omtp650': 'TALADRO PERCUTOR 650W OMAHA',
   // El Excel lo trae como "Martillo OREBRO 10J": asi no cae en Demoledores.
@@ -1374,10 +1396,14 @@ function pintarCircular(todos){
       ${f?`<img src="${f}" loading="lazy" alt="">`:'<div class="sf">Foto en camino</div>'}
       <div class="nt">${p.descripcion.replace(/^\(oferta\)\s*/i,'').split('|')[0].trim()}</div>
       <div class="nm">${marcaLabel[marcaDe(p)]||p.proveedor}</div>
+      <div class="np">${p.precio>0?fmtPrecio(p.precio):'Consultar'}</div>
     </button>`;
   };
+  // Una circular no puede promocionar algo que no hay: el que se queda sin
+  // stock se cae solo de la pieza y vuelve en cuanto se repone.
   const bloques = CIRCULAR_TEMP.grupos.map(([nombre,skus])=>{
-    const items = skus.map(s=>porSku[claveFoto(s)]).filter(Boolean);
+    const items = skus.map(s=>porSku[claveFoto(s)])
+                      .filter(p=>p && ((p.stock||0)>0 || p.consultar));
     if(!items.length) return '';
     return `<div class="ct-grupo"><h3>${nombre}</h3>
       <div class="nov-fila">${items.map(tarjeta).join('')}</div></div>`;
