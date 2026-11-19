@@ -896,11 +896,7 @@ function subDe(p, seccionNombre){
 // Ingresos de Lusqtoff de la carga del 17/11: todo lo que hoy tiene stock y
 // en la carga anterior (12/11) estaba en cero. SCL500-7 y LOD003 son alta nueva.
 // Primero las maquinas y lo que se luce, despues los consumibles.
-const NOVEDADES = ['LPACK002-8','SCL500-7','ADL4-8','MDL1300-9','BL18-8B','LMO5',
-  'CIL295-8','LOD003','atl18-8b','TL1-9N3E','MATLA-9','RLD52R47PRO','DFL9-8',
-  'TC300L-9','TCB240L-9','DVEL125-9','LQFLUX061',
-  // El combo Vohler, que entro la semana pasada y sigue siendo nuevo
-  'VHCOMBO007'];
+const NOVEDADES = ['TCL224-8','LQS158.5-7','COL550-8','LD52-7','RML850-7','LC2550B-8KIT','HL-120','LPA40-7','ACL2TS100'];
 
 // Circular de temporada: lo fuerte de jardin, bombas, hidrolavadoras y
 // generadores. Va por SKU, asi que no importa en que seccion este categorizado
@@ -909,7 +905,7 @@ const CIRCULAR_TEMP = {
   titulo: 'Circular temporada',
   bajada: 'Jardinería · Riego · Bombas de agua · Hidrolavadoras · Generadores · Outdoor',
   grupos: [
-    ['Jardinería', ['OM 471.CDS-52','OM 023.EDBAT-20','GM G1844AR','WDFWHPS3061','11002-B',
+    ['Jardinería', ['TCL224-8','COL550-8','LD52-7','OM 471.CDS-52','OM 023.EDBAT-20','GM G1844AR','WDFWHPS3061','11002-B',
                     'OM 624.BME-300','TRP2123238','SPL2400-8','PROM-52GC','KCEAP20P',
                     'RLD52R47PRO','OM 023.DN-52M','EMTEPSR630101','WDFWPR2301','LS26-7',
                     'GM G1850AR','OM 624.BME-500','GM G3079AR','LPACK002-8','LQEMS382',
@@ -917,7 +913,7 @@ const CIRCULAR_TEMP = {
                     'LD5500-8B','LCO1203-8B']],
     // El enrollador de manguera EMTOP es el de 40 metros: es el que hay mucho.
     ['Riego y pulverización', ['EMTEHHR40122','EMTEHHR20124','LJ-F40','FMOL20-8','FL2-8B']],
-    ['Bombas de agua', ['GM G2785AR','BXWPSIQB60','OM 309.QB-601/2HP','GM 3193',
+    ['Bombas de agua', ['LQS158.5-7','GM G2785AR','BXWPSIQB60','OM 309.QB-601/2HP','GM 3193',
                         'GM G2783AR','GM G2779AR','CPM158','LSP-750','GM G3445AR','GM G3446AR']],
     ['Hidrolavadoras y aspiradoras', ['GM G2517AR','GM G2516AR','LAPL3,6-8BK','HL1800-8',
                         'HL2100-9','OM 123.VP-13','WDFWLV202014','OM 123.VPH-450',
