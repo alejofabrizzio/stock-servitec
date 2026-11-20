@@ -242,14 +242,14 @@
   /* Pantalla principal: secciones */
   /* Portada en dos columnas: a la izquierda lo principal (novedades,
      temporada, videos) y al costado todo lo demas. En el celular se apila. */
-  .home{display:none;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start;}
+  .home{display:none;grid-template-columns:minmax(0,1fr) minmax(290px,330px);gap:20px;align-items:start;}
   .home.on{display:grid;}
   .home-main{min-width:0;}
   .home-lado{min-width:0;position:sticky;top:12px;}
   .home-lado .lineas{grid-template-columns:repeat(2,1fr);}
   .home-lado .nov{flex:0 0 128px;}
   .home-lado .nov img{height:86px;}
-  @media (max-width:1000px){
+  @media (max-width:860px){
     .home{grid-template-columns:1fr;}
     .home-lado{position:static;}
     .home-lado .lineas{grid-template-columns:repeat(3,1fr);}
