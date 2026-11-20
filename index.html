@@ -263,9 +263,7 @@
   .home-pie{margin-top:4px;}
   /* Las marcas y la liquidacion se siguen pintando (el menu usa sus numeros),
      pero no se muestran en la portada. */
-  .hd-sep{grid-column:1/-1;margin:12px 0 2px;font-size:10.5px;font-weight:800;letter-spacing:2px;
-          text-transform:uppercase;color:rgba(255,255,255,.55);}
-  .hd-lineas{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+  .hd-lineas{grid-column:1/-1;margin-top:5px;display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
   .hd-lineas button{position:relative;padding:11px 10px;background:rgba(255,255,255,.07);
                     border:1px solid rgba(255,255,255,.14);border-top:3px solid var(--c,#fff);
                     border-radius:9px;color:#fff;font-family:inherit;cursor:pointer;
@@ -567,12 +565,11 @@
     <nav class="hd-menu" id="hdMenu" hidden>
       <button data-ir="inicio">Inicio</button>
       <button data-ir="catalogo">Catálogo</button>
-      <button data-ir="novedades">Novedades</button>
+      <button data-ir="marcas" id="btnMarcas" aria-expanded="false">Marcas ▾</button>
       <button data-ir="temporada">Artículos de temporada</button>
       <button data-ir="liquidacion">Liquidación</button>
       <button data-ir="circulares">Circulares</button>
-      <p class="hd-sep">Marcas</p>
-      <div class="hd-lineas" id="hdLineas"></div>
+      <div class="hd-lineas" id="hdLineas" hidden></div>
     </nav>
     <div class="hd-busca" id="hdBusca" hidden>
       <input type="text" id="hdSearch" placeholder="Buscar por SKU o descripción..." aria-label="Buscar">
@@ -1851,6 +1848,10 @@ document.getElementById('subs').addEventListener('click',e=>{
 function cerrarHd(){
   const m=document.getElementById('hdMenu'), b=document.getElementById('hdBusca');
   m.hidden=true; b.hidden=true;
+  const l=document.getElementById('hdLineas');
+  if(l){ l.hidden=true;
+    const bm=document.getElementById('btnMarcas');
+    if(bm){ bm.textContent='Marcas ▾'; bm.setAttribute('aria-expanded','false'); } }
   document.getElementById('btnMenu').classList.remove('on');
   document.getElementById('btnLupa').classList.remove('on');
   document.getElementById('btnMenu').setAttribute('aria-expanded','false');
@@ -1897,12 +1898,22 @@ document.getElementById('hdMenu').addEventListener('click',e=>{
   const b=e.target.closest('[data-ir]'); if(!b) return;
   const destino=b.dataset.ir;
   cerrarHd();
+  if(destino==='marcas'){
+    // no cierra el menu: despliega las marcas ahi mismo
+    const l=document.getElementById('hdLineas'), abrir=l.hidden;
+    l.hidden=!abrir;
+    b.setAttribute('aria-expanded', abrir?'true':'false');
+    b.textContent = abrir ? 'Marcas ▴' : 'Marcas ▾';
+    document.getElementById('hdMenu').hidden=false;
+    document.getElementById('btnMenu').classList.add('on');
+    return;
+  }
   if(destino==='catalogo'){ abrirCatalogo(); return; }
   if(destino==='liquidacion'){ abrirSeccion('Liquidación TRUPER/PRETUL'); return; }
   volverAlInicio();
   // el render deja la portada lista: recien despues se puede bajar al bloque
   setTimeout(()=>{
-    const donde={ inicio:'.home-main', novedades:'#novedades',
+    const donde={ inicio:'.home-main',
                   temporada:'#circTemp', circulares:'#circBanners' }[destino];
     const el=donde && document.querySelector(donde);
     if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
