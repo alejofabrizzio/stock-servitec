@@ -204,7 +204,22 @@
             line-height:1.45;color:var(--text);background:#fff7ed;border:1px solid #f0cfa8;}
 
   /* Pantalla principal: secciones */
-  .home{display:none;}
+  /* Portada en dos columnas: a la izquierda lo principal (novedades,
+     temporada, videos) y al costado todo lo demas. En el celular se apila. */
+  .home{display:none;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start;}
+  .home.on{display:grid;}
+  .home-main{min-width:0;}
+  .home-lado{min-width:0;position:sticky;top:12px;}
+  .home-lado .lineas{grid-template-columns:repeat(2,1fr);}
+  .home-lado .nov{flex:0 0 128px;}
+  .home-lado .nov img{height:86px;}
+  @media (max-width:1000px){
+    .home{grid-template-columns:1fr;}
+    .home-lado{position:static;}
+    .home-lado .lineas{grid-template-columns:repeat(3,1fr);}
+    .home-lado .nov{flex:0 0 150px;}
+    .home-lado .nov img{height:100px;}
+  }
   .home-title{scroll-margin-top:12px;font-size:13px;color:var(--muted);margin:0 0 12px 0;font-weight:600;}
   .cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
   .cat{position:relative;text-align:left;background:var(--panel2);border:1px solid var(--border);
@@ -593,38 +608,52 @@
   </div>
 
   <div class="home" id="home">
-    <div id="circTop"></div>
-    <div class="novedades" id="novedades">
-      <h2>Novedades <span>lo último que llegó</span></h2>
-      <div class="nov-fila" id="novFila"></div>
+    <!-- Columna principal: lo que el cliente viene a ver -->
+    <div class="home-main">
+      <div id="circTop"></div>
+      <div class="novedades" id="novedades">
+        <h2>Novedades <span>lo último que llegó</span></h2>
+        <div class="nov-fila" id="novFila"></div>
+      </div>
+      <div class="circtemp" id="circTemp">
+        <h2 id="circTempTit" role="button" tabindex="0" aria-expanded="false" aria-controls="circTempCuerpo"></h2>
+        <div id="circTempCuerpo" hidden></div>
+      </div>
+      <div id="videos"></div>
     </div>
-    <div class="circtemp" id="circTemp">
-      <h2 id="circTempTit" role="button" tabindex="0" aria-expanded="false" aria-controls="circTempCuerpo"></h2>
-      <div id="circTempCuerpo" hidden></div>
-    </div>
-    <div class="liqui" id="liqui">
-      <h2>Liquidación TRUPER/PRETUL <span>hasta agotar stock · precio a consultar</span></h2>
-      <div class="nov-fila" id="liqFila"></div>
-    </div>
-    <button class="circ-banner" id="btnCatalogo">
-      <span class="ic">📒</span>
-      <span class="tx">
-        <span class="t1">Catálogo</span>
-        <span class="t2">Todas las secciones, de todas las marcas</span>
-      </span>
-      <span class="go">Ver secciones</span>
-    </button>
-    <p class="home-title">Buscá la línea de:</p>
-    <div class="lineas" id="lineas"></div>
-    <div class="envios">
-      <img src="envios.png" alt="" loading="lazy" onerror="this.remove()">
-      <span>
-        <span class="t1">Envíos a todo el país</span>
-        <span class="t2">Seguros ✅</span>
-      </span>
-    </div>
-    <div id="videos"></div>
-    <div id="circBanners"></div>
+    <!-- Al costado, todo lo demas -->
+    <aside class="home-lado">
+      <button class="circ-banner" id="btnInicio">
+        <span class="ic">🏠</span>
+        <span class="tx">
+          <span class="t1">Inicio</span>
+          <span class="t2">Novedades, temporada y videos</span>
+        </span>
+        <span class="go">Ir arriba</span>
+      </button>
+      <button class="circ-banner" id="btnCatalogo">
+        <span class="ic">📒</span>
+        <span class="tx">
+          <span class="t1">Catálogo</span>
+          <span class="t2">Todas las secciones, de todas las marcas</span>
+        </span>
+        <span class="go">Ver secciones</span>
+      </button>
+      <p class="home-title">Marcas</p>
+      <div class="lineas" id="lineas"></div>
+      <div class="liqui" id="liqui">
+        <h2>Liquidación TRUPER/PRETUL <span>hasta agotar stock · precio a consultar</span></h2>
+        <div class="nov-fila" id="liqFila"></div>
+      </div>
+      <div id="circBanners"></div>
+      <div class="envios">
+        <img src="envios.png" alt="" loading="lazy" onerror="this.remove()">
+        <span>
+          <span class="t1">Envíos a todo el país</span>
+          <span class="t2">Seguros ✅</span>
+        </span>
+      </div>
+    </aside>
   </div>
 
   <table id="table">
@@ -1556,7 +1585,7 @@ function render(){
 
   const enCatalogo = catalogo && !search;
   const enPortada = !seccion && !linea && !catalogo && !search;
-  document.getElementById('home').style.display = enPortada?'block':'none';
+  document.getElementById('home').classList.toggle('on', enPortada);
   document.getElementById('secciones').style.display = enCatalogo?'block':'none';
   if(!enPortada){ const nv=document.getElementById('novedades'); if(nv) nv.style.display='none';
                   const lq=document.getElementById('liqui'); if(lq) lq.style.display='none'; }
@@ -1735,6 +1764,12 @@ document.getElementById('subs').addEventListener('click',e=>{
   render();
 });
 
+// El boton de inicio del costado: vuelve a la portada y sube a lo principal.
+document.getElementById('btnInicio').addEventListener('click',()=>{
+  const m=document.querySelector('.home-main');
+  if(m) m.scrollIntoView({behavior:'smooth', block:'start'});
+  else window.scrollTo({top:0, behavior:'smooth'});
+});
 document.getElementById('btnCatalogo').addEventListener('click',abrirCatalogo);
 
 document.getElementById('lineas').addEventListener('click',e=>{
