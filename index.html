@@ -678,14 +678,6 @@
     </div>
     <!-- Al costado, todo lo demas -->
     <aside class="home-lado">
-      <button class="circ-banner" id="btnInicio">
-        <span class="ic">🏠</span>
-        <span class="tx">
-          <span class="t1">Inicio</span>
-          <span class="t2">Novedades, temporada y videos</span>
-        </span>
-        <span class="go">Ir arriba</span>
-      </button>
       <button class="circ-banner" id="btnCatalogo">
         <span class="ic">📒</span>
         <span class="tx">
@@ -1819,12 +1811,6 @@ document.getElementById('subs').addEventListener('click',e=>{
   render();
 });
 
-// El boton de inicio del costado: vuelve a la portada y sube a lo principal.
-document.getElementById('btnInicio').addEventListener('click',()=>{
-  const m=document.querySelector('.home-main');
-  if(m) m.scrollIntoView({behavior:'smooth', block:'start'});
-  else window.scrollTo({top:0, behavior:'smooth'});
-});
 // Encabezado: el menu y la lupa. Solo uno de los dos abierto a la vez.
 function cerrarHd(){
   const m=document.getElementById('hdMenu'), b=document.getElementById('hdBusca');
