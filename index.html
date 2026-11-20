@@ -896,7 +896,7 @@ function subDe(p, seccionNombre){
 // Ingresos de Lusqtoff de la carga del 17/11: todo lo que hoy tiene stock y
 // en la carga anterior (12/11) estaba en cero. SCL500-7 y LOD003 son alta nueva.
 // Primero las maquinas y lo que se luce, despues los consumibles.
-const NOVEDADES = ['TCL224-8','LQS158.5-7','COL550-8','RML850-7','LC2550B-8KIT','HL-120','LPA40-7','ACL2TS100'];
+const NOVEDADES = ['TCL224-8','LQS158.5-7','COL550-8','RML850-7','LC2550B-8KIT','HL-120','ACL2TS100'];
 
 // Circular de temporada: lo fuerte de jardin, bombas, hidrolavadoras y
 // generadores. Va por SKU, asi que no importa en que seccion este categorizado
@@ -1269,7 +1269,9 @@ const PRODUCTOS_MANUALES = [
 // SKU que no se muestran aunque vengan en el Excel (se filtran en cada carga).
 const EXCLUIDOS = new Set(['SLXCO42K','OM 034.EA4',
   // Discontinuados: no hay unidades aunque RP Sistemas las siga contando.
-  'OM 440.MT-55PLUS','OM 440.RM-26PLUSSPECIAL'].map(x=>claveFoto(x)));
+  'OM 440.MT-55PLUS','OM 440.RM-26PLUSSPECIAL',
+  // La bomba presurizadora: RP cuenta una y no se publica mas.
+  'LPA40-7'].map(x=>claveFoto(x)));
 // La linea CAT no se publica, salvo estos dos (cualquier CAT nuevo tampoco aparece).
 const CAT_VISIBLES = new Set(['CATCOMBO05','CATDA01902'].map(x=>claveFoto(x)));
 // La unidad que hay en deposito esta fallada: se muestra sin stock aunque RP
