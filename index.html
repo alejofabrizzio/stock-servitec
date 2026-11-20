@@ -92,6 +92,21 @@
   .secciones{display:none;}
   #videos .home-title{margin-top:20px;}
   #videos .cats{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));}
+  /* Arriba de los videos: el acceso al Instagram de la casa */
+  .insta-cta{display:flex;align-items:center;gap:13px;margin:20px 0 12px;padding:11px 15px;
+             background:var(--panel);border:1px solid var(--border);
+             border-left:4px solid #d6249f;border-radius:12px;text-decoration:none;
+             color:var(--text);transition:border-color .15s,transform .1s;}
+  .insta-cta:hover{border-color:#d6249f;transform:translateY(-1px);}
+  .insta-cta .ic{flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+                 width:42px;height:42px;border-radius:11px;color:#fff;
+                 background:linear-gradient(45deg,#f9ce34,#ee2a7b,#6228d7);}
+  .insta-cta .ic svg{width:23px;height:23px;}
+  .insta-cta .tx{flex:1 1 auto;min-width:0;}
+  .insta-cta .t1{display:block;font-size:14.5px;font-weight:800;}
+  .insta-cta .t2{display:block;font-size:12px;color:var(--muted);margin-top:1px;}
+  .insta-cta .go{flex:0 0 auto;padding:8px 16px;border-radius:8px;background:#d6249f;
+                 color:#fff;font-size:12.5px;font-weight:800;}
   .cat.video{overflow:hidden;}
   .cat.video .vwrap>span{min-width:0;}
   .cat.video .cn,.cat.video .cc{display:block;}
@@ -340,7 +355,7 @@
          transition:border-color .15s,color .15s;}
   .pie a:hover{border-color:var(--accent);color:var(--accent);}
   .pie a svg{width:20px;height:20px;flex:0 0 auto;}
-  .pie .envios{margin-top:12px;font-size:14px;color:var(--muted);font-weight:600;}
+  .pie .envios{display:inline-flex;margin:16px auto 0;text-align:left;}
   .pie .envios b{color:var(--accent);}
 
   /* Pedido: boton por producto, barra flotante y panel */
@@ -687,13 +702,6 @@
          la portada se queda solo con lo que el cliente viene a mirar. -->
     <div class="home-pie">
       <div id="circBanners"></div>
-      <div class="envios">
-        <img src="envios.png" alt="" loading="lazy" onerror="this.remove()">
-        <span>
-          <span class="t1">Envíos a todo el país</span>
-          <span class="t2">Seguros ✅</span>
-        </span>
-      </div>
       <div class="liqui" id="liqui" hidden>
         <h2>Liquidación TRUPER/PRETUL <span>hasta agotar stock · precio a consultar</span></h2>
         <div class="nov-fila" id="liqFila"></div>
@@ -727,7 +735,13 @@
       </svg>
       Seguinos en Instagram
     </a>
-    <div class="envios">Envíos a <b>todo el país</b></div>
+    <div class="envios">
+      <img src="envios.png" alt="" loading="lazy" onerror="this.remove()">
+      <span>
+        <span class="t1">Envíos a todo el país</span>
+        <span class="t2">Seguros ✅</span>
+      </span>
+    </div>
     <button class="admin-btn" id="adminToggle">Admin</button>
   </footer>
 </div>
@@ -1561,7 +1575,22 @@ function pintarSecciones(todos){
       </div>
     </a>`).join('');
   const caja = document.getElementById('videos');
-  caja.innerHTML = videos ? `<p class="home-title">Videos</p><div class="cats">${videos}</div>` : '';
+  caja.innerHTML = videos ? `
+    <a class="insta-cta" href="https://instagram.com/servitec_mg" target="_blank" rel="noopener">
+      <span class="ic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="2" y="2" width="20" height="20" rx="5"></rect>
+          <circle cx="12" cy="12" r="4"></circle>
+          <circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"></circle>
+        </svg>
+      </span>
+      <span class="tx">
+        <span class="t1">Seguinos en Instagram</span>
+        <span class="t2">@servitec_mg</span>
+      </span>
+      <span class="go">Ir</span>
+    </a>
+    <div class="cats">${videos}</div>` : '';
 }
 
 function abrirSeccion(c){
@@ -1650,8 +1679,9 @@ function render(){
       lin ? `Línea ${lin[1]}` : seccion ? seccion : enCatalogo ? 'Catálogo' : 'Resultados de la búsqueda';
   // Dentro de una seccion no va ningun cartel arriba: se entra directo al listado
   document.getElementById('hero').style.display = enPortada?'':'none';
-  document.getElementById('controls').style.display='flex';
-  // En la pantalla principal solo hace falta el buscador
+  // En la portada se busca con la lupa del encabezado: el buscador de la
+  // pagina aparece recien dentro de una seccion, el catalogo o una busqueda.
+  document.getElementById('controls').style.display = enPortada ? 'none' : 'flex';
   document.getElementById('filterEstado').style.display = (enPortada||enCatalogo)?'none':'block';
   document.getElementById('filterProv').style.display = (enPortada||enCatalogo||linea)?'none':'block';
 
