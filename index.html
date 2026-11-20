@@ -15,13 +15,49 @@
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;padding:20px;-webkit-text-size-adjust:100%;}
   .wrap{max-width:1100px;margin:0 auto;}
-  header{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:3px solid var(--accent);}
-  .brand{display:flex;align-items:center;gap:14px;min-width:0;}
+  /* Encabezado oscuro: el logo a la izquierda, el menu y la lupa a la derecha */
+  header{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;
+         margin:0 0 20px;padding:14px 18px;background:#0e0e0e;border-radius:0 0 14px 14px;
+         border-bottom:3px solid var(--accent);flex-wrap:wrap;}
+  .brand{display:flex;align-items:center;gap:14px;min-width:0;flex:1 1 auto;background:none;border:0;
+         padding:0;cursor:pointer;font-family:inherit;text-align:left;}
+  .brand h1,.brand .sub{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .brand>div{min-width:0;}
-  .brand img{width:46px;height:46px;border-radius:10px;display:block;}
-  h1{font-size:21px;letter-spacing:.5px;margin:0;text-transform:uppercase;color:var(--accent);}
+  .brand img{width:48px;height:48px;border-radius:10px;display:block;}
+  h1{font-size:23px;letter-spacing:.5px;margin:0;text-transform:uppercase;color:#fff;line-height:1.05;}
   h1 span{color:var(--accent);}
-  .sub{color:var(--muted);font-size:12px;margin-top:2px;letter-spacing:2.5px;font-weight:700;}
+  .sub{color:var(--accent);font-size:10.5px;margin-top:3px;letter-spacing:2.2px;font-weight:800;}
+  .sub-corto{display:none;}
+  .hd-acciones{display:flex;align-items:center;gap:6px;flex:0 0 auto;}
+  .hd-btn{display:flex;align-items:center;justify-content:center;width:44px;height:44px;
+          background:none;border:0;border-radius:9px;cursor:pointer;color:#fff;transition:background .15s;}
+  .hd-btn:hover{background:rgba(255,255,255,.12);}
+  .hd-btn.on{background:var(--accent);}
+  .hd-btn svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2.1;
+              stroke-linecap:round;stroke-linejoin:round;}
+  .hd-menu{flex:1 0 100%;width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:7px;
+           margin-top:13px;padding-top:13px;border-top:1px solid rgba(255,255,255,.14);}
+  .hd-menu button{padding:11px 12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+                  border-radius:9px;color:#fff;font-family:inherit;font-size:12.5px;font-weight:700;
+                  cursor:pointer;transition:all .15s;}
+  .hd-menu button:hover{background:var(--accent);border-color:var(--accent);}
+  .hd-busca{flex:1 0 100%;width:100%;margin-top:13px;}
+  .hd-busca input{width:100%;padding:12px 15px;border:1px solid rgba(255,255,255,.2);border-radius:10px;
+                  background:rgba(255,255,255,.07);color:#fff;font-family:inherit;font-size:14px;}
+  .hd-busca input::placeholder{color:rgba(255,255,255,.5);}
+  .hd-busca input:focus{outline:none;border-color:var(--accent);background:rgba(255,255,255,.12);}
+  @media(max-width:560px){
+    header{padding:12px 14px;}
+    h1{font-size:17px;}
+    .sub{font-size:9px;letter-spacing:1.6px;}
+    .brand img{width:40px;height:40px;}
+    .brand{gap:10px;flex:1 1 0;}
+    .sub-largo{display:none;}
+    .sub-corto{display:inline;}
+    .hd-btn{width:40px;height:40px;}
+    .hd-btn svg{width:23px;height:23px;}
+    .hd-menu{grid-template-columns:repeat(2,1fr);}
+  }
   .admin-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:7px;font-size:12px;cursor:pointer;margin-top:18px;}
   .admin-btn:hover{border-color:var(--accent);color:var(--accent);}
 
@@ -493,12 +529,31 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="brand">
+    <button class="brand" id="brandInicio" aria-label="Ir al inicio">
       <img src="logo.png" alt="Servitec MG SRL" onerror="this.style.display='none'">
       <div>
         <h1>SERVITEC MG SRL</h1>
-        <div class="sub">DISTRIBUIDOR</div>
+        <div class="sub"><span class="sub-largo">DISTRIBUIDOR DE HERRAMIENTAS</span><span class="sub-corto">DISTRIBUIDOR</span></div>
       </div>
+    </button>
+    <div class="hd-acciones">
+      <button class="hd-btn" id="btnMenu" aria-label="Menú" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <button class="hd-btn" id="btnLupa" aria-label="Buscar" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.2-4.2"/></svg>
+      </button>
+    </div>
+    <nav class="hd-menu" id="hdMenu" hidden>
+      <button data-ir="inicio">Inicio</button>
+      <button data-ir="catalogo">Catálogo</button>
+      <button data-ir="marcas">Marcas</button>
+      <button data-ir="novedades">Novedades</button>
+      <button data-ir="temporada">Artículos de temporada</button>
+      <button data-ir="liquidacion">Liquidación</button>
+    </nav>
+    <div class="hd-busca" id="hdBusca" hidden>
+      <input type="text" id="hdSearch" placeholder="Buscar por SKU o descripción..." aria-label="Buscar">
     </div>
   </header>
 
@@ -1770,6 +1825,65 @@ document.getElementById('btnInicio').addEventListener('click',()=>{
   if(m) m.scrollIntoView({behavior:'smooth', block:'start'});
   else window.scrollTo({top:0, behavior:'smooth'});
 });
+// Encabezado: el menu y la lupa. Solo uno de los dos abierto a la vez.
+function cerrarHd(){
+  const m=document.getElementById('hdMenu'), b=document.getElementById('hdBusca');
+  m.hidden=true; b.hidden=true;
+  document.getElementById('btnMenu').classList.remove('on');
+  document.getElementById('btnLupa').classList.remove('on');
+  document.getElementById('btnMenu').setAttribute('aria-expanded','false');
+  document.getElementById('btnLupa').setAttribute('aria-expanded','false');
+}
+document.getElementById('btnMenu').addEventListener('click',()=>{
+  const m=document.getElementById('hdMenu'), abrir=m.hidden;
+  cerrarHd();
+  if(abrir){
+    m.hidden=false;
+    document.getElementById('btnMenu').classList.add('on');
+    document.getElementById('btnMenu').setAttribute('aria-expanded','true');
+  }
+});
+document.getElementById('btnLupa').addEventListener('click',()=>{
+  const b=document.getElementById('hdBusca'), abrir=b.hidden;
+  cerrarHd();
+  if(abrir){
+    b.hidden=false;
+    document.getElementById('btnLupa').classList.add('on');
+    document.getElementById('btnLupa').setAttribute('aria-expanded','true');
+    document.getElementById('hdSearch').focus();
+  }
+});
+// La lupa escribe en el buscador de siempre: la logica de filtrado no cambia.
+document.getElementById('hdSearch').addEventListener('input',e=>{
+  const s=document.getElementById('search');
+  s.value = e.target.value;
+  s.dispatchEvent(new Event('input'));
+});
+document.getElementById('brandInicio').addEventListener('click',()=>{ cerrarHd(); volverAlInicio(); });
+function volverAlInicio(){
+  catalogo=false; seccion=null; linea=null; subsec=null; limite=PASO;
+  document.getElementById('search').value='';
+  document.getElementById('hdSearch').value='';
+  document.getElementById('filterEstado').value='';
+  document.getElementById('filterProv').value='';
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.getElementById('hdMenu').addEventListener('click',e=>{
+  const b=e.target.closest('[data-ir]'); if(!b) return;
+  const destino=b.dataset.ir;
+  cerrarHd();
+  if(destino==='catalogo'){ abrirCatalogo(); return; }
+  volverAlInicio();
+  // el render deja la portada lista: recien despues se puede bajar al bloque
+  setTimeout(()=>{
+    const donde={ inicio:'.home-main', marcas:'.home-lado .lineas',
+                  novedades:'#novedades', temporada:'#circTemp', liquidacion:'#liqui' }[destino];
+    const el=donde && document.querySelector(donde);
+    if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 120);
+});
+
 document.getElementById('btnCatalogo').addEventListener('click',abrirCatalogo);
 
 document.getElementById('lineas').addEventListener('click',e=>{
