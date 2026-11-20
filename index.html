@@ -240,21 +240,26 @@
             line-height:1.45;color:var(--text);background:#fff7ed;border:1px solid #f0cfa8;}
 
   /* Pantalla principal: secciones */
-  /* Portada en dos columnas: a la izquierda lo principal (novedades,
-     temporada, videos) y al costado todo lo demas. En el celular se apila. */
-  .home{display:none;grid-template-columns:minmax(0,1fr) minmax(290px,330px);gap:20px;align-items:start;}
-  .home.on{display:grid;}
+  /* La portada solo muestra lo principal: el catalogo, las marcas y la
+     liquidacion se entran por el menu del encabezado. */
+  .home{display:none;}
+  .home.on{display:block;}
   .home-main{min-width:0;}
-  .home-lado{min-width:0;position:sticky;top:12px;}
-  .home-lado .lineas{grid-template-columns:repeat(2,1fr);}
-  .home-lado .nov{flex:0 0 128px;}
-  .home-lado .nov img{height:86px;}
-  @media (max-width:860px){
-    .home{grid-template-columns:1fr;}
-    .home-lado{position:static;}
-    .home-lado .lineas{grid-template-columns:repeat(3,1fr);}
-    .home-lado .nov{flex:0 0 150px;}
-    .home-lado .nov img{height:100px;}
+  .home-pie{margin-top:4px;}
+  /* Las marcas y la liquidacion se siguen pintando (el menu usa sus numeros),
+     pero no se muestran en la portada. */
+  .hd-sep{grid-column:1/-1;margin:12px 0 2px;font-size:10.5px;font-weight:800;letter-spacing:2px;
+          text-transform:uppercase;color:rgba(255,255,255,.55);}
+  .hd-lineas{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+  .hd-lineas button{position:relative;padding:11px 10px;background:rgba(255,255,255,.07);
+                    border:1px solid rgba(255,255,255,.14);border-top:3px solid var(--c,#fff);
+                    border-radius:9px;color:#fff;font-family:inherit;cursor:pointer;
+                    display:flex;flex-direction:column;gap:2px;transition:all .15s;}
+  .hd-lineas button:hover{background:rgba(255,255,255,.16);}
+  .hd-lineas .ln{font-size:12.5px;font-weight:800;}
+  .hd-lineas .lc{font-size:10px;color:rgba(255,255,255,.6);font-weight:600;}
+  @media(max-width:560px){
+    .hd-lineas{grid-template-columns:repeat(2,1fr);}
   }
   .home-title{scroll-margin-top:12px;font-size:13px;color:var(--muted);margin:0 0 12px 0;font-weight:600;}
   .cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
@@ -547,10 +552,12 @@
     <nav class="hd-menu" id="hdMenu" hidden>
       <button data-ir="inicio">Inicio</button>
       <button data-ir="catalogo">Catálogo</button>
-      <button data-ir="marcas">Marcas</button>
       <button data-ir="novedades">Novedades</button>
       <button data-ir="temporada">Artículos de temporada</button>
       <button data-ir="liquidacion">Liquidación</button>
+      <button data-ir="circulares">Circulares</button>
+      <p class="hd-sep">Marcas</p>
+      <div class="hd-lineas" id="hdLineas"></div>
     </nav>
     <div class="hd-busca" id="hdBusca" hidden>
       <input type="text" id="hdSearch" placeholder="Buscar por SKU o descripción..." aria-label="Buscar">
@@ -676,22 +683,9 @@
       </div>
       <div id="videos"></div>
     </div>
-    <!-- Al costado, todo lo demas -->
-    <aside class="home-lado">
-      <button class="circ-banner" id="btnCatalogo">
-        <span class="ic">📒</span>
-        <span class="tx">
-          <span class="t1">Catálogo</span>
-          <span class="t2">Todas las secciones, de todas las marcas</span>
-        </span>
-        <span class="go">Ver secciones</span>
-      </button>
-      <p class="home-title">Marcas</p>
-      <div class="lineas" id="lineas"></div>
-      <div class="liqui" id="liqui">
-        <h2>Liquidación TRUPER/PRETUL <span>hasta agotar stock · precio a consultar</span></h2>
-        <div class="nov-fila" id="liqFila"></div>
-      </div>
+    <!-- El catalogo, las marcas y la liquidacion viven en el menu de arriba:
+         la portada se queda solo con lo que el cliente viene a mirar. -->
+    <div class="home-pie">
       <div id="circBanners"></div>
       <div class="envios">
         <img src="envios.png" alt="" loading="lazy" onerror="this.remove()">
@@ -700,7 +694,12 @@
           <span class="t2">Seguros ✅</span>
         </span>
       </div>
-    </aside>
+      <div class="liqui" id="liqui" hidden>
+        <h2>Liquidación TRUPER/PRETUL <span>hasta agotar stock · precio a consultar</span></h2>
+        <div class="nov-fila" id="liqFila"></div>
+      </div>
+      <div class="lineas" id="lineas" hidden></div>
+    </div>
   </div>
 
   <table id="table">
@@ -1157,6 +1156,13 @@ function pintarLineas(todos){
   document.getElementById('lineas').innerHTML = LINEAS.map(([id,nom,c])=>`
     <button data-linea="${id}" style="--c:${c}">
       <span class="lt">Línea</span>
+      <span class="ln">${nom}</span>
+      <span class="lc">${con[id]||0} disponibles</span>
+    </button>`).join('');
+  // las mismas lineas, en el menu del encabezado
+  const hl=document.getElementById('hdLineas');
+  if(hl) hl.innerHTML = LINEAS.map(([id,nom,c])=>`
+    <button data-linea="${id}" style="--c:${c}">
       <span class="ln">${nom}</span>
       <span class="lc">${con[id]||0} disponibles</span>
     </button>`).join('');
@@ -1856,21 +1862,22 @@ function volverAlInicio(){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 document.getElementById('hdMenu').addEventListener('click',e=>{
+  const linea=e.target.closest('[data-linea]');
+  if(linea){ cerrarHd(); abrirLinea(linea.dataset.linea); return; }
   const b=e.target.closest('[data-ir]'); if(!b) return;
   const destino=b.dataset.ir;
   cerrarHd();
   if(destino==='catalogo'){ abrirCatalogo(); return; }
+  if(destino==='liquidacion'){ abrirSeccion('Liquidación TRUPER/PRETUL'); return; }
   volverAlInicio();
   // el render deja la portada lista: recien despues se puede bajar al bloque
   setTimeout(()=>{
-    const donde={ inicio:'.home-main', marcas:'.home-lado .lineas',
-                  novedades:'#novedades', temporada:'#circTemp', liquidacion:'#liqui' }[destino];
+    const donde={ inicio:'.home-main', novedades:'#novedades',
+                  temporada:'#circTemp', circulares:'#circBanners' }[destino];
     const el=donde && document.querySelector(donde);
     if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
   }, 120);
 });
-
-document.getElementById('btnCatalogo').addEventListener('click',abrirCatalogo);
 
 document.getElementById('lineas').addEventListener('click',e=>{
   const b=e.target.closest('[data-linea]');
