@@ -861,6 +861,11 @@ const CATEGORIAS = [
   // Antes que Taller, que se queda con "prensa" a secas: el sargento es de carpinteria.
   // Antes que Sierras y que Taller: el sargento es una herramienta manual.
   ['Herramientas manuales', /sargento|prensa tipo f|prensa de carpinter/],
+  // Los rollos de alambre flux (LQFLUX) son de soldadura aunque digan "rollo".
+  ['Soldadura', /# lqflux|^rollo .*flux/],
+  // La hoyadora a motor es de construccion; la "pala hoyadora" es manual y
+  // se queda en jardin porque la descripcion empieza con "pala".
+  ['Construcción', /^(\(oferta\) *)?hoyadora/],
   // La linea LOD de Lusqtoff es toda de camping (conservadoras, anafes, faroles).
   ['Outdoor y camping', /# lod\d/],
   // Antes que Herramientas manuales: un kit de nivel laser es de medicion.
