@@ -953,7 +953,46 @@ try{ pedido = JSON.parse(localStorage.getItem('pedidoServitec')||'{}'); }catch(e
 function guardarPedido(){ try{ localStorage.setItem('pedidoServitec',JSON.stringify(pedido)); }catch(e){} }
 
 // Subsecciones dentro de una seccion. Gana la primera que coincide.
+// Piezas para armar las subsecciones de Jardin, Taladros y Accesorios.
+// Las de repuestos y manuales se reconocen por como EMPIEZA la descripcion:
+// asi una motosierra que dice "Espada 46 cm" no se confunde con una espada.
+const _OF='^(\\(oferta\\) *)?';
+const _JAR_ACC='bobina|cadena|espada|carretel|cabezal|bujia|embrague|filtro|grasa|disco p|arnes|afilador|aspersor|ionizador|pistola +pulverizadora';
+const _JAR_MAN='pala de |pala hoyadora|pico y pala|rastrillo|azada|carretilla|tijera|cortacesped manual|fumigador manual|fumigador pulverizador|pulverizador +\\d|podadora de altura|juego de jardin';
+const _NO_JAR='^(?!(\\(oferta\\) *)?('+_JAR_ACC+'|'+_JAR_MAN+'))';
+const _BAT_JAR='bateria|inalam|\\b(12|18|20|36|40) ?v\\b|# ry40|iron volt|eco line|usb|pack jardin';
+const _BAT_TAL='bateria|inalam|\\b(4|8|12|16|18|20|21|36|40) ?v\\b|iron|eco line|brushless|bk$';
+const _SOLD='^(\\(oferta\\) *)?(soldadora|kit soldador|mega kit)';
+const _AC_BAT='bateria|cargador|jgo \\d+ baterias';
+const _AC_CON='(\\d+ )?(discos?|lija|tanza|hojas? de sierra|set de \\d+ hojas|aceite|grasa|lubricante|antiadherente|arranca motores|espuma|silicona|renovador|bujias?|filtro(?! (de aire )?regulador)|cadena (\\.|\\d)|rollo +cadena|cincel|bolsa de papel|clip de nivelacion|cu.as de nivelacion|separadores|rodel|cuchillas de repuesto|copa disco|juego de mechas?|juego mecha|set (\\d+ )?brocas|set mecha|sets de fresas)';
+
 const SUBSECCIONES = {
+  // El orden de los botones es el de esta lista: las maquinas primero.
+  'Jardín y exterior': [
+    ['Nafteros',   new RegExp(_NO_JAR+'.*(\\d+[.,]?\\d* ?cc\\b|naftero|naftera|explosion|gasolina|\\d+[.,]?\\d* ?hp\\b|\\b[24] ?t\\b|[24] tiempos|\\bexp\\.? )')],
+    ['Eléctricos', new RegExp(_NO_JAR+'(?!.*('+_BAT_JAR+')).*(electric|\\d+ ?w\\b|# kbcl|# hl-?220ex)')],
+    ['A batería',  new RegExp(_NO_JAR+'.*('+_BAT_JAR+')')],
+    ['Manuales',   new RegExp(_OF+'('+_JAR_MAN+')')],
+    ['Accesorios', new RegExp(_OF+'('+_JAR_ACC+')')],
+  ],
+  'Taladros y atornilladores': [
+    ['Eléctricos', new RegExp('^(?!.*('+_BAT_TAL+')).*(\\d+ ?w\\b|electric|de banco|de pie|base magnetica|percutor|percusion|atornillador (c\\/|lusqtoff)|kit amoladora)')],
+    ['A batería',  new RegExp(_BAT_TAL)],
+  ],
+  'Soldadura': [
+    // MIG antes que Inverter: casi todas las MIG/Flux tambien dicen "inverter".
+    // Las SML de Lusqtoff son MIG flux aunque la descripcion no lo diga.
+    ['Inverter',             new RegExp(_SOLD+'(?!.*(mig|flux|# sml)).*(inverter|inv\\.|iron|tig|smith|igbt)')],
+    ['MIG o Flux',           new RegExp(_SOLD+'.*(mig|flux|# sml)')],
+    ['Cortadoras de plasma', /^cortadora de plasma/],
+    ['Accesorios',           /^(\(oferta\) *)?(masc|careta|electrodo|alambre|rollo|base magnetica|carro|guante|delantal|juego pinza|kit de accesorios|pistola soldadora)/],
+  ],
+  'Accesorios y consumibles': [
+    // Accesorios es todo lo que no es consumible ni bateria/cargador.
+    ['Accesorios',            new RegExp('^(?!(\\(oferta\\) *)?('+_AC_BAT+'|'+_AC_CON+'))')],
+    ['Consumibles',           new RegExp(_OF+_AC_CON)],
+    ['Cargadores y baterías', new RegExp(_OF+'('+_AC_BAT+')')],
+  ],
   'Taller y máquinas de banco': [
     // Lista curada por SKU (ver JGOTUBOS); la regex no matchea sola.
     ['Juegos de tubos', /$^/],
