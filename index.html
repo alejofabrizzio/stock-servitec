@@ -1897,17 +1897,16 @@ document.getElementById('hdMenu').addEventListener('click',e=>{
   if(linea){ cerrarHd(); abrirLinea(linea.dataset.linea); return; }
   const b=e.target.closest('[data-ir]'); if(!b) return;
   const destino=b.dataset.ir;
-  cerrarHd();
+  // Marcas se resuelve antes de cerrar nada: cerrarHd() pliega las lineas, y
+  // si corriera primero el boton siempre creeria que estan cerradas.
   if(destino==='marcas'){
-    // no cierra el menu: despliega las marcas ahi mismo
     const l=document.getElementById('hdLineas'), abrir=l.hidden;
     l.hidden=!abrir;
     b.setAttribute('aria-expanded', abrir?'true':'false');
     b.textContent = abrir ? 'Marcas ▴' : 'Marcas ▾';
-    document.getElementById('hdMenu').hidden=false;
-    document.getElementById('btnMenu').classList.add('on');
     return;
   }
+  cerrarHd();
   if(destino==='catalogo'){ abrirCatalogo(); return; }
   if(destino==='liquidacion'){ abrirSeccion('Liquidación TRUPER/PRETUL'); return; }
   volverAlInicio();
