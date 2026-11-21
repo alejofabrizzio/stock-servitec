@@ -849,7 +849,8 @@ const CATEGORIAS = [
   ['Taller y máquinas de banco', /cargador ?[-\/ ]? ?arrancador|arrancador|cargador (de )?bat|cargador mantenedor|cargador\/arrancador|booster/],
   // Antes de Outdoor, que se lleva cualquier "botella": el criquet botella es un gato.
   ['Taller y máquinas de banco', /crique[a-z]* botella/],
-  ['Outdoor y camping', /botella|vaso termico|taza termica|termo\b|matera|\bmate\b|pava|conservadora|carpa|bolsa de dormir|camping|cantimplora|silla plegable|reposera|mochila/],
+  // "mochila" sola no: hay sopladores, fumigadoras y aspiradoras mochila.
+  ['Outdoor y camping', /botella|vaso termico|taza termica|termo\b|matera|\bmate\b|pava|conservadora|carpa|bolsa de dormir|camping|cantimplora|silla plegable|reposera|mochila (de viaje|tactica|urbana)/],
   ['Construcción', /rotomartillo|roto ?martillo|demoledor|martillo (demoledor|electroneumatico|perforador|rotativo)|cortadora de ceramica|cortaceramica|cortadora de porcelanato|ventosa|vibronivelador|vibrador de hormigon|vibradora|motovibrador|hormigonera|mezcladora de hormigon|mezclador|revolvedora|placa compactadora|compactador|alisador|revocadora|acanaladora|llana/],
   // Solo cuando la bateria ES el producto: si no, "taladro a bateria" terminaba aca en vez de en Taladros.
   ['Accesorios y consumibles', /tanza|cincel|clip de nivelacion|cunas? de nivelacion|separadores? de baldosa|^(\(oferta\)\s*)?bateria\b(?! de cocina)|^(\(oferta\)\s*)?(jgo|juego) \d+ bateria|jgo \d bateria|juego \d bateria|^(\(oferta\)\s*)?cargador ?[+y] ?bateria|cargador p\/ ?bateria|cargador de bateria para herramienta/],
@@ -995,6 +996,12 @@ const SUBSECCIONES = {
     ['MIG o Flux',           new RegExp(_SOLD+'.*(mig|flux|# sml)')],
     ['Cortadoras de plasma', /^cortadora de plasma/],
     ['Accesorios',           /^(\(oferta\) *)?(masc|careta|electrodo|alambre|rollo|base magnetica|carro|guante|delantal|juego pinza|kit de accesorios|pistola soldadora)/],
+  ],
+  'Outdoor y camping': [
+    // Camping: toda la linea LOD de Lusqtoff mas conservadoras, cava y silla.
+    ['Camping',           /# lod\d|^conservadora|^cava |^silla camping/],
+    ['Termos',            /^(termo|mate |vaso termico|botella termica|taza termica)/],
+    ['Mochilas y carpas', /^(carpa|bolsa de dormir|mochila (de viaje|tactica|urbana))/],
   ],
   'Accesorios y consumibles': [
     // Accesorios es todo lo que no es consumible ni bateria/cargador.
