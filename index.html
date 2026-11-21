@@ -275,13 +275,13 @@
     .hd-lineas{grid-template-columns:repeat(2,1fr);}
   }
   .home-title{scroll-margin-top:12px;font-size:13px;color:var(--muted);margin:0 0 12px 0;font-weight:600;}
-  .cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
+  .cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:18px;}
   .cat{position:relative;text-align:left;background:var(--panel2);border:1px solid var(--border);
-       border-left:4px solid var(--c);border-radius:10px;padding:13px 14px 13px 15px;cursor:pointer;
+       border-left:5px solid var(--c);border-radius:12px;padding:20px 20px 20px 22px;cursor:pointer;
        font-family:inherit;box-shadow:0 1px 2px rgba(0,0,0,.05);transition:box-shadow .15s,transform .1s;}
   .cat:hover{box-shadow:0 6px 16px rgba(0,0,0,.14);transform:translateY(-2px);}
-  .cat .cn{font-size:14px;font-weight:700;color:var(--text);line-height:1.3;}
-  .cat .cc{font-size:11.5px;color:var(--muted);margin-top:5px;font-weight:500;white-space:nowrap;}
+  .cat .cn{font-size:16.5px;font-weight:700;color:var(--text);line-height:1.3;}
+  .cat .cc{font-size:12.5px;color:var(--muted);margin-top:7px;font-weight:500;white-space:nowrap;}
   .cat .cc b{color:var(--mucho);font-weight:700;}
 
   /* Portada de una sección (ej: Black Series) */
@@ -491,10 +491,10 @@
     h1{font-size:16px;}
     .sub{font-size:11px;}
 
-    .cats{grid-template-columns:repeat(2,1fr);gap:10px;}
+    .cats{grid-template-columns:1fr;gap:12px;}
     /* los videos llevan miniatura: en el celular va uno por fila */
     #videos .cats{grid-template-columns:1fr;}
-    .cat{padding:11px;}
+    .cat{padding:15px 16px;}
     .cat .cn{font-size:13px;}
     .cat .cc{font-size:11px;margin-top:4px;}
     .secbar h2{font-size:15px;}
@@ -833,7 +833,7 @@ const CATEGORIAS = [
   // Antes de Outdoor, que se lleva cualquier "botella": el criquet botella es un gato.
   ['Taller y máquinas de banco', /crique[a-z]* botella/],
   ['Outdoor y camping', /botella|vaso termico|taza termica|termo\b|matera|\bmate\b|pava|conservadora|carpa|bolsa de dormir|camping|cantimplora|silla plegable|reposera|mochila/],
-  ['Construcción', /rotomartillo|demoledor|martillo (demoledor|electroneumatico|perforador|rotativo)|cortadora de ceramica|cortaceramica|cortadora de porcelanato|ventosa|vibronivelador|vibrador de hormigon|vibradora|motovibrador|hormigonera|mezcladora de hormigon|mezclador|revolvedora|placa compactadora|compactador|alisador|revocadora|acanaladora|llana/],
+  ['Construcción', /rotomartillo|roto ?martillo|demoledor|martillo (demoledor|electroneumatico|perforador|rotativo)|cortadora de ceramica|cortaceramica|cortadora de porcelanato|ventosa|vibronivelador|vibrador de hormigon|vibradora|motovibrador|hormigonera|mezcladora de hormigon|mezclador|revolvedora|placa compactadora|compactador|alisador|revocadora|acanaladora|llana/],
   // Solo cuando la bateria ES el producto: si no, "taladro a bateria" terminaba aca en vez de en Taladros.
   ['Accesorios y consumibles', /tanza|cincel|clip de nivelacion|cunas? de nivelacion|separadores? de baldosa|^(\(oferta\)\s*)?bateria\b(?! de cocina)|^(\(oferta\)\s*)?(jgo|juego) \d+ bateria|jgo \d bateria|juego \d bateria|^(\(oferta\)\s*)?cargador ?[+y] ?bateria|cargador p\/ ?bateria|cargador de bateria para herramienta/],
   ['Jardín y exterior', /cortadora de (cesped|pasto)|cortacesped|corta ?cesped|sopladora|soplador|desmalezadora|motosierra|bordeadora|cortacerco|corta cerco|fumigad|pulverizador|aspersor|regador|ionizador|motoguadana|podador|podar|pala\b|azada|rastrillo|carretilla|riego|motocultivador|motoazada|astilladora|chipeadora|espada|guadana|jardin/],
@@ -951,7 +951,7 @@ const SUBSECCIONES = {
     ['Ventosas', /ventosa/],
     ['Cortadoras de cerámica', /cortadora de ceramica|cortaceramica|cortadora de porcelanato/],
     ['Demoledores', /demoledor/],
-    ['Rotomartillos', /rotomartillo/],
+    ['Rotomartillos', /rotomartillo|roto ?martillo/],
   ],
   'Sierras y carpintería': [
     ['Máquinas de banco', /de banco|de mesa|sierra de mesa|inglet|sinfin|sin fin|tupi|escuadradora|garlopa|torno|cepilladora|combinada/],
@@ -982,7 +982,11 @@ function subDe(p, seccionNombre){
 // Ingresos de Lusqtoff de la carga del 17/11: todo lo que hoy tiene stock y
 // en la carga anterior (12/11) estaba en cero. SCL500-7 y LOD003 son alta nueva.
 // Primero las maquinas y lo que se luce, despues los consumibles.
-const NOVEDADES = ['TCL224-8','LQS158.5-7','COL550-8','RML850-7','LC2550B-8KIT','HL-120','ACL2TS100'];
+const NOVEDADES = [
+  // Ingresos de Gamma y KLD del 20/11
+  'GM G1937AR','GM G1937KAR','WDFWLDK5918','KLD1982ECO','WDFWGA1504',
+  'WDFWCLP5564','EMTEPSR725103',
+  'TCL224-8','LQS158.5-7','COL550-8','RML850-7','LC2550B-8KIT','HL-120','ACL2TS100'];
 
 // Circular de temporada: lo fuerte de jardin, bombas, hidrolavadoras y
 // generadores. Va por SKU, asi que no importa en que seccion este categorizado
