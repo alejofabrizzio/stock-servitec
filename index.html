@@ -86,6 +86,11 @@
   .hero .puntos b.on{background:#fff;transform:scale(1.25);}
 
   /* Tarjeta de video: va al final de la grilla de secciones */
+  .cat.video .vlink{display:block;text-decoration:none;color:inherit;}
+  .vprod{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:11px;
+         padding:9px 12px;background:var(--accent);border:0;border-radius:8px;color:#fff;
+         font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;transition:filter .15s;}
+  .vprod:hover{filter:brightness(1.1);}
   .cat.video{display:block;text-decoration:none;border-left-color:#d6249f;
              background:linear-gradient(135deg,#fff 60%,#fdf2fb);}
   .cat.video .cn{display:flex;align-items:center;gap:7px;}
@@ -1551,6 +1556,8 @@ const VIDEOS = [
   {titulo:'Pedidos y despachos',              url:'https://www.instagram.com/reel/Day9beCPsVm/', foto:'vid-despachos.jpg'},
   {titulo:'Nuestro día a día',                url:'https://www.instagram.com/reel/Dc2CuRnvwYe/', foto:'vid-diaadia.jpg'},
   {titulo:'Llaves de impacto Lüsqtoff',       url:'https://www.instagram.com/reel/DePVI7yx30v/', foto:'vid-llaves-impacto.jpg'},
+  // Con sku, la tarjeta suma un boton que lleva al articulo del video.
+  {titulo:'Taladro de impacto a batería Black', url:'https://www.instagram.com/reel/DfinzJ5PtQa/', foto:'fotos/til458bk.jpg', sku:'TIL45-8BK'},
 ];
 
 function pintarSecciones(todos){
@@ -1573,15 +1580,18 @@ function pintarSecciones(todos){
   document.getElementById('cats').innerHTML = secciones;
 
   const videos = VIDEOS.map(v=>`
-    <a class="cat video" href="${v.url}" target="_blank" rel="noopener">
-      <div class="vwrap">
-        ${v.foto?`<img class="th" src="${v.foto}" alt="" loading="lazy" onerror="this.remove()">`:''}
-        <span>
-          <span class="cn"><span class="play">▶</span>${v.titulo}</span>
-          <span class="cc">Ver el video en Instagram</span>
-        </span>
-      </div>
-    </a>`).join('');
+    <div class="cat video">
+      <a class="vlink" href="${v.url}" target="_blank" rel="noopener">
+        <div class="vwrap">
+          ${v.foto?`<img class="th" src="${v.foto}" alt="" loading="lazy" onerror="this.remove()">`:''}
+          <span>
+            <span class="cn"><span class="play">▶</span>${v.titulo}</span>
+            <span class="cc">Ver el video en Instagram</span>
+          </span>
+        </div>
+      </a>
+      ${v.sku?`<button type="button" class="vprod" data-sku="${v.sku}">Ver el artículo · ${v.sku} <span>&#8250;</span></button>`:''}
+    </div>`).join('');
   const caja = document.getElementById('videos');
   caja.innerHTML = videos ? `
     <a class="insta-cta" href="https://instagram.com/servitec_mg" target="_blank" rel="noopener">
@@ -1853,6 +1863,19 @@ document.getElementById('subs').addEventListener('click',e=>{
   subsec = b.dataset.sub || null;
   limite = PASO;
   render();
+});
+
+// El boton de la tarjeta de video abre el articulo del que habla el reel.
+document.getElementById('videos').addEventListener('click',e=>{
+  const b=e.target.closest('.vprod'); if(!b) return;
+  e.preventDefault();
+  catalogo=false; seccion=null; linea=null; subsec=null; limite=PASO;
+  document.getElementById('search').value=b.dataset.sku;
+  document.getElementById('hdSearch').value=b.dataset.sku;
+  document.getElementById('filterEstado').value='';
+  document.getElementById('filterProv').value='';
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
 });
 
 // Encabezado: el menu y la lupa. Solo uno de los dos abierto a la vez.
