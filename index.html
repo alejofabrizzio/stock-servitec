@@ -87,6 +87,17 @@
 
   /* Tarjeta de video: va al final de la grilla de secciones */
   .cat.video .vlink{display:block;text-decoration:none;color:inherit;}
+  /* Video destacado: ocupa toda la fila y muestra el clip grande */
+  .cat.video.destacado{grid-column:1/-1;}
+  .cat.video.destacado .vwrap{align-items:center;gap:18px;}
+  .cat.video.destacado .clip{flex:0 0 auto;width:190px;aspect-ratio:9/16;object-fit:cover;
+                             border-radius:12px;background:#000;display:block;}
+  .cat.video.destacado .cn{font-size:18px;}
+  .cat.video.destacado .cc{font-size:13px;margin-top:6px;}
+  @media(max-width:600px){
+    .cat.video.destacado .clip{width:132px;}
+    .cat.video.destacado .cn{font-size:15px;}
+  }
   .vprod{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:11px;
          padding:9px 12px;background:var(--accent);border:0;border-radius:8px;color:#fff;
          font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;transition:filter .15s;}
@@ -1556,12 +1567,13 @@ function pintarLiquidacion(todos){
 
 // Videos del Instagram de Servitec. Para sumar uno, agregar {titulo, url} aca.
 const VIDEOS = [
+  // Con clip, la tarjeta va destacada y pasa 6 segundos del reel en bucle.
+  // Con sku, suma un boton que lleva al articulo del video.
+  {titulo:'Taladro de impacto a batería Black', url:'https://www.instagram.com/reel/DfinzJ5PtQa/', foto:'vid-til45-8bk.jpg', clip:'vid-til45-8bk.mp4', sku:'TIL45-8BK'},
   {titulo:'Hidrolavadora a batería Lüsqtoff', url:'https://www.instagram.com/reel/DcQ-CAUyiyg/', foto:'vid-hidrolavadora.jpg'},
   {titulo:'Pedidos y despachos',              url:'https://www.instagram.com/reel/Day9beCPsVm/', foto:'vid-despachos.jpg'},
   {titulo:'Nuestro día a día',                url:'https://www.instagram.com/reel/Dc2CuRnvwYe/', foto:'vid-diaadia.jpg'},
   {titulo:'Llaves de impacto Lüsqtoff',       url:'https://www.instagram.com/reel/DePVI7yx30v/', foto:'vid-llaves-impacto.jpg'},
-  // Con sku, la tarjeta suma un boton que lleva al articulo del video.
-  {titulo:'Taladro de impacto a batería Black', url:'https://www.instagram.com/reel/DfinzJ5PtQa/', foto:'vid-taladro-black.jpg', sku:'TIL45-8BK'},
 ];
 
 function pintarSecciones(todos){
@@ -1584,10 +1596,12 @@ function pintarSecciones(todos){
   document.getElementById('cats').innerHTML = secciones;
 
   const videos = VIDEOS.map(v=>`
-    <div class="cat video">
+    <div class="cat video${v.clip?' destacado':''}">
       <a class="vlink" href="${v.url}" target="_blank" rel="noopener">
         <div class="vwrap">
-          ${v.foto?`<img class="th" src="${v.foto}" alt="" loading="lazy" onerror="this.remove()">`:''}
+          ${v.clip
+            ? `<video class="clip" src="${v.clip}" poster="${v.foto||''}" muted loop playsinline preload="none"></video>`
+            : v.foto?`<img class="th" src="${v.foto}" alt="" loading="lazy" onerror="this.remove()">`:''}
           <span>
             <span class="cn"><span class="play">▶</span>${v.titulo}</span>
             <span class="cc">Ver el video en Instagram</span>
@@ -1613,6 +1627,7 @@ function pintarSecciones(todos){
       <span class="go">Ir</span>
     </a>
     <div class="cats">${videos}</div>` : '';
+  activarClips();
 }
 
 function abrirSeccion(c){
@@ -1868,6 +1883,25 @@ document.getElementById('subs').addEventListener('click',e=>{
   limite = PASO;
   render();
 });
+
+// Los clips de los videos destacados: arrancan cuando entran en pantalla y
+// se frenan cuando salen. Asi no se bajan si el cliente no llega hasta ahi.
+// Se llama desde pintarSecciones, cada vez que se dibujan los videos.
+function activarClips(){
+  if(!window.__obsClips && 'IntersectionObserver' in window){
+    window.__obsClips = new IntersectionObserver(ents=>{
+      ents.forEach(en=>{
+        const v=en.target;
+        if(en.isIntersecting){ if(v.preload==='none') v.preload='auto'; v.play().catch(()=>{}); }
+        else v.pause();
+      });
+    },{threshold:0.35});
+  }
+  document.querySelectorAll('#videos video.clip').forEach(v=>{
+    v.muted=true;
+    if(window.__obsClips) window.__obsClips.observe(v); else v.play().catch(()=>{});
+  });
+}
 
 // El boton de la tarjeta de video abre el articulo del que habla el reel.
 document.getElementById('videos').addEventListener('click',e=>{
