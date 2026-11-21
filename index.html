@@ -1383,7 +1383,10 @@ const SIN_STOCK = new Set(['OM 281.SI-8',
   // El set de muebles Apolo: RP lo cuenta y no hay.
   'BER55347',
   // La tijera de poda de mango largo: RP la cuenta y no hay.
-  'WDFWPR1301'].map(x=>claveFoto(x)));
+  'WDFWPR1301',
+  // El equipo de pintar airless Wadfow, el mezclador Omaha y la hidrolavadora
+  // HL-120: RP los cuenta y en el deposito no hay.
+  'WDFWAY1A104','MX-1400','HL-120'].map(x=>claveFoto(x)));
 // Al reves: unidades que estan en el deposito pero RP Sistemas trae en cero.
 // Sacar de aca en cuanto el stock quede bien cargado en RP.
 const CON_STOCK = {'WDFWCD3B214': 2, 'MDL1300-9': 5};
