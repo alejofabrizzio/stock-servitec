@@ -42,10 +42,12 @@
                   cursor:pointer;transition:all .15s;}
   .hd-menu button:hover{background:var(--accent);border-color:var(--accent);}
   .hd-busca{flex:1 0 100%;width:100%;margin-top:13px;}
-  .hd-busca input{width:100%;padding:12px 15px;border:1px solid rgba(255,255,255,.2);border-radius:10px;
-                  background:rgba(255,255,255,.07);color:#fff;font-family:inherit;font-size:14px;}
-  .hd-busca input::placeholder{color:rgba(255,255,255,.5);}
-  .hd-busca input:focus{outline:none;border-color:var(--accent);background:rgba(255,255,255,.12);}
+  /* "header" adelante: la regla general de input[type=text] esta mas abajo y le ganaba */
+  header .hd-busca input[type="text"]{flex:none;width:100%;padding:12px 15px;border:1px solid rgba(255,255,255,.25);
+                  border-radius:10px;background:#1c1c1c;color:#fff;-webkit-text-fill-color:#fff;
+                  caret-color:#fff;font-family:inherit;font-size:15px;}
+  header .hd-busca input[type="text"]::placeholder{color:rgba(255,255,255,.55);-webkit-text-fill-color:rgba(255,255,255,.55);}
+  header .hd-busca input[type="text"]:focus{outline:none;border-color:var(--accent);background:#262626;}
   @media(max-width:560px){
     header{padding:12px 14px;}
     h1{font-size:17px;}
