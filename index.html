@@ -1789,6 +1789,18 @@ function render(){
   // En la portada se busca con la lupa del encabezado: el buscador de la
   // pagina aparece recien dentro de una seccion, el catalogo o una busqueda.
   document.getElementById('controls').style.display = enPortada ? 'none' : 'flex';
+  // En "Resultados de la busqueda" el buscador es el de la lupa: el de la
+  // pagina se esconde para que no aparezcan dos. Si la busqueda vino de otro
+  // lado (un cartel del carrusel), la lupa se abre con el mismo texto.
+  const enBusqueda = !seccion && !linea && !catalogo && !!search;
+  const cajaBusca = document.getElementById('search');
+  cajaBusca.style.display = enBusqueda ? 'none' : '';
+  if(enBusqueda){
+    const hd=document.getElementById('hdSearch');
+    if(hd.value !== cajaBusca.value) hd.value = cajaBusca.value;
+    document.getElementById('hdBusca').hidden = false;
+    document.getElementById('btnLupa').classList.add('on');
+  }
   document.getElementById('filterEstado').style.display = (enPortada||enCatalogo)?'none':'block';
   document.getElementById('filterProv').style.display = (enPortada||enCatalogo||linea)?'none':'block';
 
@@ -2128,6 +2140,8 @@ document.getElementById('backBtn').addEventListener('click',()=>{
   subsec = null;
   limite = PASO;
   document.getElementById('search').value='';
+  document.getElementById('hdSearch').value='';
+  cerrarHd();
   document.getElementById('filterEstado').value='';
   document.getElementById('filterProv').value='';
   render();
