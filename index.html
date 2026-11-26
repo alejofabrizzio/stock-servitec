@@ -1154,7 +1154,9 @@ const CAT_FORZADA = {};
  ['OM 625.IP-7','Outdoor y camping'],
  ['WDFWKK1K31','Outdoor y camping'],
  ['WDFWKK1K51','Outdoor y camping'],
- ['WDFWBJ23084','Neumáticos']].forEach(([sku,cat])=>{
+ ['WDFWBJ23084','Neumáticos'],
+ // El set Apolo es un juego de jardin: sofa, dos sillas y mesa.
+ ['BER55347','Outdoor y camping']].forEach(([sku,cat])=>{
   CAT_FORZADA[sku.toLowerCase().replace(/[^a-z0-9]/g,'')] = cat;
 });
 function categoriaDe(p){
